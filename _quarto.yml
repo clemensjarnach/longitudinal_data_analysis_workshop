@@ -1,0 +1,53 @@
+project:
+  type: book
+  output-dir: docs
+  # execute:
+  #   cache: true
+  #   freeze: auto
+  
+book:
+  title: "Longitudinal Data Analysis with R"
+  subtitle: "A Practical Introduction from Theory to Code"
+  author: "Dr Clemens Jarnach"
+  date: "04/16/2026"
+  repo-url: https://github.com/clemensjarnach/social_network_analysis_workshop
+  chapters:
+    - index.qmd
+    - exercise_farm_panel.qmd
+    - panel_data_and_fe.qmd	
+    - r_fundamentals.qmd
+    - panel_data_in_R.qmd
+    - exercise_farm_panel_re.qmd
+    - feedback.qmd
+    - how_to_cite.qmd
+    - references.qmd
+    - appendix.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    split-by: chapter  
+    number-depth: 1
+    theme: cosmo
+    highlight-style: atom-one
+    code-block-bg: "#f0f0f0"
+    code-block-border-left: "#045a8d"
+    code-fold: false
+    code-summary: "Code"
+    code-tools: true
+    code-link: true
+    code-copy: true
+    knitr:
+      opts_chunk:
+        out.width: 100%
+        R.options:
+          width: 68
+  # pdf:
+  #   documentclass: scrbook
+  #   always_allow_html: true
+  #   include-in-header:
+  #     - text: |
+  #         \usepackage{dcolumn}
+    
+pdf-engine: lualatex

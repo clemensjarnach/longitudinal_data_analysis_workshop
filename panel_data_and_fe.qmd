@@ -1,0 +1,878 @@
+---
+title: "Panel Data Fundamentals and Fixed Effects"
+subtitle: "Data Structures, Unobserved Heterogeneity, and the Within Estimator"
+author: "Dr Clemens Jarnach"
+date: "2025-26"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-title: "Contents"
+    number-sections: false
+    theme: cosmo
+    code-fold: true
+    code-summary: "Show R code"
+    code-tools: true
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| code-fold: true
+#| code-summary: "Load packages"
+library(tidyverse)
+library(plm)
+library(knitr)
+library(RColorBrewer)
+library(broom)
+library(lmtest)
+library(sandwich)
+
+pal_main  <- brewer.pal(8, "Set2")
+pal_rdbu  <- brewer.pal(11, "RdBu")
+```
+
+------------------------------------------------------------------------
+
+## Introduction
+
+This chapter develops the conceptual and technical foundations for panel data analysis. We begin by situating panel data within a broader taxonomy of data structures, introduce formal notation, and explain why repeated observations of the same units are so analytically valuable. The central problem — **unobserved heterogeneity** — motivates fixed effects estimation, and we work through its mechanics step by step: the within transformation, the least squares dummy variable approach, and first differencing. The chapter closes with implementation in R and a frank account of the limitations every applied researcher must consider.
+
+------------------------------------------------------------------------
+
+## Step 1 — Types of Data Structures
+
+Before introducing panel data, it helps to place it within a broader taxonomy of data structures commonly used in quantitative social science.
+
+**Cross-sectional data** capture a single snapshot of a population at one point in time. Each unit — person, firm, city — appears once. Cross-sectional analysis is straightforward but cannot distinguish between stable, unit-specific differences and genuine causal effects of a treatment or predictor.
+
+**Pure time series data** track a single unit (e.g., a national economy, a market index) across many time points. These data reveal temporal dynamics but cannot generalise across units.
+
+**Independently pooled cross sections** combine multiple cross-sections taken at different points in time, but the samples at each wave are drawn independently — the same individuals are not followed. Pooling increases sample size and supports comparisons across time, but the lack of unit tracking means we cannot control for unobserved individual characteristics.
+
+**Panel data** (also called longitudinal data) follow the *same* units — individuals, firms, schools, cities, countries — across multiple time periods. This dual structure, cross-sectional and temporal, is what makes panel data analytically powerful.
+
+```{r data-structures-table}
+#| code-fold: true
+#| code-summary: "Data structure comparison"
+
+tibble(
+  `Data type`        = c("Cross-sectional", "Time series",
+                         "Pooled cross-sections", "Panel / longitudinal"),
+  `Units ($N$)`      = c("Many", "One", "Many (different)", "Many (same)"),
+  `Time periods ($T$)` = c("One", "Many", "Many", "Many"),
+  `Same units tracked?` = c("—", "n/a", "No", "Yes"),
+  `Controls unobserved heterogeneity?` = c("No", "No", "No", "Yes (FE/RE)")
+) |>
+  kable(align = "lcccc",
+        caption = "Table 1 — Taxonomy of common data structures in quantitative social science")
+```
+
+```{r data-structures-plot}
+#| code-fold: true
+#| code-summary: "Visual comparison of data structures"
+#| fig-cap: "Figure 1 — Four data structures: each row is a unit, each column a time period. Filled squares = observed; open squares = not observed or different units."
+#| fig-height: 4.5
+
+# Grid visualisation: rows = units (i), columns = time periods (t)
+expand_grid(type = factor(c("Cross-sectional", "Time series",
+                             "Pooled cross-sections", "Panel"),
+                           levels = c("Cross-sectional", "Time series",
+                                      "Pooled cross-sections", "Panel")),
+            i = 1:5, t = 1:4) |>
+  mutate(
+    observed = case_when(
+      type == "Cross-sectional"    & t == 2              ~ TRUE,
+      type == "Time series"        & i == 1              ~ TRUE,
+      type == "Pooled cross-sections"                     ~ (i + t) %% 2 == 0,
+      type == "Panel"                                     ~ TRUE,
+      TRUE ~ FALSE
+    ),
+    same_unit = case_when(
+      type == "Pooled cross-sections" ~ "Different units each wave",
+      type == "Panel"                 ~ "Same units across waves",
+      TRUE ~ NA_character_
+    )
+  ) |>
+  ggplot(aes(x = factor(t), y = factor(i, levels = 5:1),
+             fill = observed, colour = observed)) +
+  geom_tile(linewidth = 0.5, width = 0.8, height = 0.8) +
+  scale_fill_manual(values  = c("TRUE" = "#4DAF4A", "FALSE" = "grey88"),
+                    labels  = c("TRUE" = "Observed", "FALSE" = "Not observed"),
+                    name    = NULL) +
+  scale_colour_manual(values = c("TRUE" = "#2b8a2b", "FALSE" = "grey70"),
+                      guide  = "none") +
+  facet_wrap(~ type, ncol = 4) +
+  labs(x = "Time period (t)", y = "Unit (i)",
+       title = "Data structures — which cells are observed?") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom",
+        panel.grid = element_blank(),
+        axis.text = element_text(size = 9))
+```
+
+::: {.callout-tip collapse="true"}
+### Key takeaway
+
+The defining feature of panel data is the green column of fully observed cells: **the same units appear at every time period**. This dual structure unlocks within-unit comparisons over time — the engine of fixed effects identification.
+:::
+
+------------------------------------------------------------------------
+
+## Step 2 — Panel Data: Structure and Notation
+
+A panel dataset contains observations for $N$ units indexed by $i = 1, \dots, N$, each observed at $T$ time periods indexed by $t = 1, \dots, T$. A **balanced panel** has no missing waves: every unit is observed at every time period, yielding $N \times T$ total observations. An **unbalanced panel** has gaps — some units are observed at fewer time points than others.
+
+We write the general unobserved effects model as:
+
+$$y_{it} = \beta_0 + \delta_0 d_t + \mathbf{x}_{it}\boldsymbol{\beta} + a_i + \varepsilon_{it}$$
+
+where:
+
+| Symbol | Meaning |
+|---|---|
+| $y_{it}$ | Outcome for unit $i$ at time $t$ |
+| $\mathbf{x}_{it}$ | $1 \times k$ vector of time-varying regressors |
+| $\boldsymbol{\beta}$ | $k \times 1$ parameter vector of interest |
+| $d_t$ | Time dummy capturing aggregate trends (e.g., $d_t = 1$ for $t = 2$) |
+| $\delta_0$ | Coefficient on time dummy |
+| $a_i$ | **Unobserved individual effect** — time-constant, unit-specific |
+| $\varepsilon_{it}$ | **Idiosyncratic error** — time-varying, unit-specific |
+
+The term $a_i$ is variously called an unobserved effect, a fixed effect, or unobserved heterogeneity. Whatever the label, its key property is that it does not vary within a unit over time: $a_{it} = a_i$ for all $t$.
+
+```{r panel-structure-demo}
+#| code-fold: true
+#| code-summary: "What panel data looks like in R"
+
+# Simulate a small balanced panel: 4 countries × 5 years
+set.seed(1)
+panel_demo <- expand_grid(
+  country = c("UK", "France", "Germany", "Spain"),
+  year    = 2018:2022
+) |>
+  mutate(
+    gdp_growth = round(rnorm(n(), mean = 1.8, sd = 1.2), 2),
+    unemployment = round(runif(n(), 4, 12), 1)
+  )
+
+kable(panel_demo,
+      col.names = c("Country (i)", "Year (t)", "GDP growth (%)", "Unemployment (%)"),
+      align = "cccc",
+      caption = "Table 2 — A balanced panel: 4 countries × 5 years = 20 observations")
+```
+
+```{r balanced-vs-unbalanced}
+#| code-fold: true
+#| code-summary: "Balanced vs unbalanced panel"
+
+# Introduce missingness to make it unbalanced
+panel_unbal <- panel_demo |>
+  filter(!(country == "Spain"  & year %in% c(2021, 2022)),
+         !(country == "France" & year == 2018))
+
+obs_count <- panel_unbal |>
+  count(country, name = "Observations")
+
+kable(obs_count,
+      col.names = c("Country", "Observations (of 5 possible)"),
+      align = "lc",
+      caption = "Table 3 — Unbalanced panel: not every unit observed at every wave")
+```
+
+::: callout-note
+### Balanced vs unbalanced panels in R
+
+The `plm` package handles both structures automatically when you declare the panel index via `pdata.frame(df, index = c("unit_id", "time_id"))`. For `feols` from `fixest`, no special declaration is needed — unbalanced panels are handled transparently.
+:::
+
+------------------------------------------------------------------------
+
+## Step 3 — Why Panel Data? The Problem of Unobserved Heterogeneity
+
+The core motivation for panel methods is the problem of **unobserved heterogeneity**: units differ in ways we cannot directly measure, and those differences may be correlated with our regressors.
+
+Consider a concrete example. Suppose we want to estimate the effect of local unemployment on city crime rates. A naive cross-sectional regression of crime on unemployment will likely yield a biased estimate, because cities differ in ways that jointly affect both unemployment and crime — geographic location, historical economic infrastructure, long-standing institutional features — but that are invisible in the data.
+
+The composite error in a pooled OLS model is $v_{it} = a_i + \varepsilon_{it}$. If $a_i$ is correlated with $\mathbf{x}_{it}$, this composite error is also correlated with the regressors. This violates the exogeneity assumption $\text{Cov}(\mathbf{x}_{it}, v_{it}) = 0$, and OLS estimates of $\boldsymbol{\beta}$ become **biased and inconsistent**. The direction and magnitude of the bias depends on the sign and strength of the correlation between $a_i$ and $\mathbf{x}_{it}$. This is sometimes called **heterogeneity bias**, though it is ultimately a form of omitted variable bias: $a_i$ is an omitted confounder.
+
+The key insight that motivates panel methods is this: by observing the same units at multiple time points, we can use *within-unit variation over time* to identify $\boldsymbol{\beta}$, rather than relying on cross-unit comparisons that are contaminated by $a_i$.
+
+```{r ovb-simulation}
+#| code-fold: true
+#| code-summary: "Simulate omitted variable bias in cross-section"
+#| fig-cap: "Figure 2 — Cross-sectional OLS is upward-biased when unobserved quality is positively correlated with the predictor. The true within-unit relationship (dashed) is much flatter."
+#| fig-height: 4.5
+
+set.seed(42)
+true_beta   <- 0.4     # true effect of unemployment on crime
+n_cities    <- 30
+n_periods   <- 1       # cross-section only for now
+
+# City-level unobserved factors (urban density, historical disadvantage, etc.)
+# Positively correlated with unemployment
+city_quality <- rnorm(n_cities, 0, 10)
+unem_cs      <- 5 + 0.6 * city_quality + rnorm(n_cities, 0, 2)  # endogenous!
+crime_cs     <- 30 + city_quality + true_beta * unem_cs + rnorm(n_cities, 0, 3)
+
+df_ovb <- tibble(city = 1:n_cities, unem = unem_cs, crime = crime_cs,
+                 quality = city_quality)
+
+ols_cs  <- lm(crime ~ unem, data = df_ovb)
+beta_cs <- round(coef(ols_cs)["unem"], 3)
+
+ggplot(df_ovb, aes(x = unem, y = crime)) +
+  geom_point(aes(fill = quality), shape = 21, size = 3.5, alpha = 0.85,
+             colour = "grey30") +
+  geom_smooth(method = "lm", se = TRUE, colour = "#E41A1C",
+              fill = "#E41A1C", alpha = 0.15, linewidth = 1.1) +
+  geom_abline(intercept = coef(ols_cs)[1] + mean(city_quality),
+              slope = true_beta,
+              linetype = "dashed", colour = "grey40", linewidth = 0.9) +
+  scale_fill_gradientn(colours = rev(pal_rdbu[3:9]),
+                       name = "Unobserved\nurban quality") +
+  annotate("text", x = max(unem_cs) - 0.5, y = min(crime_cs) + 3,
+           label = paste0("\u2014  Cross-sectional OLS slope = ", beta_cs,
+                          "  (upward-biased: mixes within- and between-city variation)"),
+           colour = "#E41A1C", fontface = "bold", size = 3.6, hjust = 1) +
+  annotate("text", x = max(unem_cs) - 0.5, y = min(crime_cs) - 0.5,
+           label = paste0("- - -  True within-city \u03b2 = ", true_beta,
+                          "  (unaffected by unobserved city-level confounders)"),
+           colour = "grey40", fontface = "italic", size = 3.6, hjust = 1) +
+  labs(x = "Unemployment rate (%)", y = "Crime rate (index)",
+       title = "Cross-sectional OLS conflates within- and between-city variation",
+       subtitle = "Solid red line: cross-sectional OLS fit (biased)  |  Dashed grey line: true causal within-city effect") +
+  theme_minimal(base_size = 13)
+```
+
+::: {.callout-warning collapse="true"}
+### Heterogeneity bias — direction and magnitude
+
+The OLS omitted variable bias formula tells us:
+
+$$\text{plim}\,\hat\beta_{\text{OLS}} = \beta + \delta_1 \frac{\text{Cov}(x_{it},\, a_i)}{\text{Var}(x_{it})}$$
+
+where $\delta_1$ is the effect of $a_i$ on $y_{it}$. In the crime example:
+
+- $\delta_1 > 0$: cities with higher unobserved disadvantage have more crime.
+- $\text{Cov}(\text{unem},\, a_i) > 0$: those same disadvantaged cities also have higher unemployment.
+
+Both terms are positive, so $\hat\beta_{\text{OLS}} > \beta_{\text{true}}$. The cross-sectional estimate overstates the causal effect of unemployment.
+:::
+
+------------------------------------------------------------------------
+
+### Example: Women's Fertility over Time
+
+> *This example is adapted from @wooldridgeIntroductionEconometrics2014, Chapter 13.*
+
+A demographer may be interested in the following question: after controlling for education, has the pattern of fertility among women over age 35 changed between 1972 and 1984?
+
+The dataset **FERTIL1**, similar to that used by Sander (1992), comes from the National Opinion Research Center's General Social Survey for the even years from 1972 to 1984. We model the total number of children born to a woman (`kids`). Year dummy variables capture trends in fertility net of education, age, race, and region.
+
+```{r fertil-data}
+#| code-fold: true
+#| code-summary: "Simulate FERTIL1-like data"
+
+set.seed(2024)
+
+# ~1,100 women, surveyed in even years 1972-1984 (pooled cross-section)
+n_total <- 1100
+years_f <- c(1972, 1974, 1976, 1978, 1980, 1982, 1984)
+
+# Year-specific baseline fertility (declining sharply post-1980)
+year_effect <- c(0, -0.03, -0.07, -0.10, -0.18, -0.52, -0.54)
+names(year_effect) <- as.character(years_f)
+
+df_fertil <- tibble(
+  id   = 1:n_total,
+  year = sample(years_f, n_total, replace = TRUE),
+  educ = round(pmax(0, pmin(20, rnorm(n_total, 12.5, 2.5)))),
+  age  = round(runif(n_total, 35, 55)),
+  black = rbinom(n_total, 1, 0.12),
+  east  = rbinom(n_total, 1, 0.2),
+  west  = rbinom(n_total, 1, 0.2)
+) |>
+  mutate(
+    yr_eff = year_effect[as.character(year)],
+    # True DGP: kids = f(educ, age, time trend) + noise
+    kids_raw = 3.5 - 0.13 * educ +
+               0.18 * (age - 35) - 0.004 * (age - 35)^2 +
+               0.3 * black + yr_eff +
+               rnorm(n_total, 0, 0.8),
+    kids = pmax(0, round(kids_raw))
+  )
+
+# Add year dummies and run regression
+df_fertil <- df_fertil |>
+  mutate(year_f = factor(year, levels = sort(unique(year))))
+
+mod_fertil <- lm(kids ~ year_f + educ + age + I(age^2) + black + east + west,
+                 data = df_fertil)
+```
+
+```{r fertil-year-effects}
+#| code-fold: true
+#| code-summary: "Extract and plot year-dummy coefficients"
+#| fig-cap: "Figure 3 — Year dummy coefficients: net change in completed fertility relative to 1972, after controlling for education, age, and demographics."
+#| fig-height: 4
+
+coef_df <- broom::tidy(mod_fertil, conf.int = TRUE) |>
+  filter(str_starts(term, "year_f")) |>
+  mutate(year = as.integer(str_remove(term, "year_f")))
+
+# Add 1972 reference (0 by construction)
+coef_df <- bind_rows(
+  tibble(year = 1972, estimate = 0, conf.low = 0, conf.high = 0),
+  coef_df
+)
+
+ggplot(coef_df, aes(x = year, y = estimate)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey60") +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
+              fill = "#4DAF4A", alpha = 0.2) +
+  geom_line(colour = "#4DAF4A", linewidth = 1.2) +
+  geom_point(size = 4, colour = "#2b8a2b") +
+  geom_text(aes(label = round(estimate, 2)),
+            vjust = -1, size = 3.4, colour = "grey30") +
+  scale_x_continuous(breaks = years_f) +
+  labs(x = "Survey year", y = "Change in kids (relative to 1972)",
+       title = "Fertility declined sharply in the early 1980s",
+       subtitle = "Year dummy coefficients from OLS regression (base = 1972)") +
+  theme_minimal(base_size = 13)
+```
+
+```{r fertil-interpretation}
+#| code-fold: true
+#| code-summary: "Interpretation table"
+
+broom::tidy(mod_fertil) |>
+  filter(term %in% c("educ", "age", "I(age^2)", "black",
+                     "year_f1982", "year_f1984")) |>
+  mutate(term = recode(term,
+    educ = "Education (years)", age = "Age", `I(age^2)` = "Age²",
+    black = "Black (=1)", year_f1982 = "Year = 1982", year_f1984 = "Year = 1984")) |>
+  select(Term = term, `β̂` = estimate, SE = std.error, `p-value` = p.value) |>
+  mutate(across(where(is.numeric), \(x) round(x, 4))) |>
+  kable(align = "lccc",
+        caption = "Table 4 — Selected coefficients from fertility regression")
+```
+
+::: {.callout-note collapse="true"}
+### Reading the results
+
+The base year is 1972. The coefficient on `year = 1982` implies that, holding education, age, and other factors fixed, a woman had on average about **0.52 fewer children** in 1982 than in 1972. That is a large drop: 100 comparable women in 1982 are predicted to have roughly 52 fewer children than 100 women in 1972.
+
+Critically, this is **net of education**: rising average education levels (from 12.2 to 13.3 years over this period) would by themselves reduce fertility. The year dummies capture *additional* fertility decline not explained by observable controls — likely reflecting changing social norms, access to contraception, and labour-market opportunities.
+
+This type of analysis — pooled cross-sections with year dummies — underpins the **difference-in-differences** estimator, where one group is "treated" by a policy change while another serves as a control.
+:::
+
+------------------------------------------------------------------------
+
+## Step 4 — Pooled OLS (And Why It Fails)
+
+Consider a two-period model ($t = 1, 2$) for 46 US cities, observed in 1982 and 1987. We want to estimate the effect of unemployment on crime:
+
+$$\text{crime\_rate}_{it} = \beta_0 + \delta_0 \, \text{d87}_{t} + \beta_1 \, \text{unemployment}_{it} + a_i + \varepsilon_{it}$$
+
+where $\text{d87}_t$ is a dummy equal to 1 in 1987 and 0 in 1982.
+
+If we simply pool the two years and run OLS, we must assume that $a_i$ — city-specific, time-invariant factors such as geography, historical culture, or institutional legacies — is uncorrelated with unemployment. That assumption is almost certainly false. Cities with unfavourable structural conditions may persistently exhibit both higher unemployment and higher crime. Pooled OLS will then conflate the within-city effect of unemployment with these between-city differences, producing a biased estimate of $\beta_1$.
+
+```{r crime-data}
+#| code-fold: true
+#| code-summary: "Simulate CRIME2-like two-period panel (46 US cities)"
+
+set.seed(99)
+true_beta_crime <- 2.0   # true within-city effect of unemployment on crime
+n_cities_c      <- 46
+
+# Unobserved city quality (structural disadvantage) — positively
+# correlated with unemployment AND crime
+city_fe <- rnorm(n_cities_c, 0, 8)
+
+# Labour input matrix: period 1 (1982) and period 2 (1987)
+unem_82 <- 7 + 0.7 * city_fe + rnorm(n_cities_c, 0, 1.5)
+unem_87 <- unem_82 + rnorm(n_cities_c, -0.5, 1.2)   # slight drop by 1987
+
+# Crime rate: driven by city FE + unemployment + noise
+crime_82 <- 40 + city_fe + true_beta_crime * unem_82 + rnorm(n_cities_c, 0, 4)
+crime_87 <- 40 + city_fe + true_beta_crime * unem_87 +
+            5 +  # national crime rise 1982-1987 (d87 = 1)
+            rnorm(n_cities_c, 0, 4)
+
+df_crime <- tibble(
+  city  = rep(1:n_cities_c, 2),
+  year  = rep(c(1982, 1987), each = n_cities_c),
+  d87   = rep(c(0, 1), each = n_cities_c),
+  unem  = c(unem_82, unem_87),
+  crime = c(crime_82, crime_87),
+  city_fe = rep(city_fe, 2)
+)
+```
+
+```{r pooled-ols-crime}
+#| code-fold: true
+#| code-summary: "Run pooled OLS and display results"
+
+mod_pooled <- lm(crime ~ d87 + unem, data = df_crime)
+beta_pool  <- round(coef(mod_pooled)["unem"], 3)
+
+tibble(
+  Estimator    = "Pooled OLS",
+  `β̂ (unem)`  = beta_pool,
+  `True β`     = true_beta_crime,
+  Bias         = round(beta_pool - true_beta_crime, 3),
+  Note         = "Between + within variation (contaminated by aᵢ)"
+) |>
+  kable(align = "lcccc",
+        caption = "Table 5 — Pooled OLS: biased because city heterogeneity is omitted")
+```
+
+```{r pooled-ols-plot}
+#| code-fold: true
+#| code-summary: "Visualise pooled OLS bias"
+#| fig-cap: "Figure 4 — Pooled OLS conflates cross-city differences (driven by unobserved city quality) with within-city changes. The true within-city slope (dashed) is much flatter."
+#| fig-height: 5
+
+df_crime_means <- df_crime |>
+  group_by(city) |>
+  mutate(mean_unem = mean(unem), mean_crime = mean(crime)) |>
+  ungroup()
+
+ggplot(df_crime_means, aes(x = unem, y = crime)) +
+  # Connect two observations of the same city with thin grey lines
+  geom_line(aes(group = city), colour = "grey75", linewidth = 0.5, alpha = 0.6) +
+  # Year points
+  geom_point(aes(shape = factor(year), colour = city_fe),
+             size = 2.5, alpha = 0.85) +
+  # Pooled OLS
+  geom_smooth(method = "lm", se = FALSE, colour = "#E41A1C",
+              linewidth = 1.3, linetype = "solid") +
+  # True within-city slope through grand mean
+  geom_abline(
+    intercept = mean(df_crime$crime) - true_beta_crime * mean(df_crime$unem),
+    slope = true_beta_crime,
+    colour = "grey30", linewidth = 1.1, linetype = "dashed"
+  ) +
+  scale_colour_gradientn(colours = rev(pal_rdbu[3:9]),
+                         name = "City FE\n(unobserved)") +
+  scale_shape_manual(values = c("1982" = 16, "1987" = 17), name = "Year") +
+  annotate("text", x = max(df_crime$unem) - 0.3,
+           y = min(df_crime$crime) + 4,
+           label = paste0("OLS: β̂ = ", beta_pool, "  (biased ↑)"),
+           colour = "#E41A1C", fontface = "bold", size = 3.6, hjust = 1) +
+  annotate("text", x = max(df_crime$unem) - 0.3,
+           y = min(df_crime$crime) + 0.2,
+           label = paste0("True within-city β = ", true_beta_crime),
+           colour = "grey30", fontface = "italic", size = 3.6, hjust = 1) +
+  labs(x = "Unemployment rate (%)", y = "Crime rate (index)",
+       title = "Pooled OLS is biased — city heterogeneity inflates the slope",
+       subtitle = "Each pair of points connected by a grey line is the same city in 1982 and 1987") +
+  theme_minimal(base_size = 13)
+```
+
+### Example: Crime Rates and Unemployment (Two-Period Panel)
+
+> *This example is adapted from @wooldridgeIntroductionEconometrics2014, Chapter 13.*
+
+The dataset **CRIME2** contains crime and unemployment rates for 46 US cities in 1982 and 1987. The two periods need not be adjacent; what matters is that the **same units** are observed at both points in time.
+
+One response to the omitted-variable problem is to add further controls (age distribution, gender distribution, education levels, law enforcement effort), but many relevant factors are difficult to measure directly. Panel data offer a more principled solution. We decompose the unobserved determinants of the outcome into two types: those that are time-constant and those that vary over time.
+
+The time dummy $d_t$ captures aggregate time trends common to all cities. The term $a_i$ captures all **unobserved, time-constant factors** that affect crime. Because it carries no $t$ subscript, it is fixed within each unit over time. The idiosyncratic error $\varepsilon_{it}$ represents factors that are both time-varying and unit-specific.
+
+::: {.callout-warning collapse="true"}
+### Why pooled OLS fails here
+
+Pooled OLS on this data produces a biased estimate because:
+
+1. Cities with historically high disadvantage ($a_i$ large) have both high crime *and* high unemployment.
+2. When we pool observations from both years without controlling for city identity, the OLS line is tilted up by this between-city confounding.
+3. The coefficient $\hat\beta_{\text{OLS}}$ captures the correlation between unemployment and crime **across cities**, not the causal effect of unemployment *changes within a city*.
+
+Adding more observable controls helps, but cannot fully remove the bias if important determinants of crime — policing culture, economic geography, historical disinvestment — remain unmeasured.
+:::
+
+------------------------------------------------------------------------
+
+## Step 5 — The Within Transformation and Fixed Effects Estimation
+
+The fixed effects (FE) estimator eliminates $a_i$ by exploiting the fact that it is time-constant. Two algebraically equivalent approaches achieve this.
+
+### 5.1 The Within (De-meaning) Transformation
+
+For each unit $i$, compute the time-mean of every variable:
+
+$$\bar{y}_i = \frac{1}{T}\sum_{t=1}^T y_{it}, \qquad \bar{\mathbf{x}}_i = \frac{1}{T}\sum_{t=1}^T \mathbf{x}_{it}$$
+
+Subtracting the unit mean from each observation yields the **within-transformed** model:
+
+$$y_{it} - \bar{y}_i = (\mathbf{x}_{it} - \bar{\mathbf{x}}_i)\boldsymbol{\beta} + (\varepsilon_{it} - \bar{\varepsilon}_i)$$
+
+Because $a_i$ is constant, $a_i - \bar{a}_i = 0$: the unobserved effect cancels exactly. OLS on the demeaned data yields the **within estimator**, which is consistent even when $a_i$ and $\mathbf{x}_{it}$ are correlated, provided the idiosyncratic errors satisfy strict exogeneity: $\text{E}(\varepsilon_{it} \mid \mathbf{x}_{i1}, \dots, \mathbf{x}_{iT}, a_i) = 0$.
+
+```{r demeaning-demo}
+#| code-fold: true
+#| code-summary: "Demonstrate the within (de-meaning) transformation on crime data"
+
+# Show the demeaning step-by-step for first 5 cities
+df_demean_demo <- df_crime |>
+  group_by(city) |>
+  mutate(
+    unem_mean  = mean(unem),
+    crime_mean = mean(crime),
+    unem_dm    = unem  - unem_mean,
+    crime_dm   = crime - crime_mean
+  ) |>
+  ungroup()
+
+# Display a few rows
+df_demean_demo |>
+  filter(city <= 4) |>
+  select(city, year, unem, unem_mean, unem_dm, crime, crime_mean, crime_dm) |>
+  mutate(across(where(is.numeric), \(x) round(x, 2))) |>
+  kable(col.names = c("City", "Year", "Unem", "Ū_i", "Unem − Ū_i",
+                      "Crime", "C̄_i", "Crime − C̄_i"),
+        align = "cccccccc",
+        caption = "Table 6 — De-meaning: each observation expressed as deviation from its city mean")
+```
+
+```{r demeaning-plot}
+#| code-fold: true
+#| code-summary: "Plot original vs de-meaned data"
+#| fig-cap: "Figure 5 — The within transformation. **Top panel:** raw data in which each point is one city-year observation. The OLS regression line (red) conflates differences *between* cities (e.g. high-crime cities may always have high unemployment) with changes *within* cities over time. **Bottom panel:** after de-meaning, each point shows how far that city-year deviates from its own time-average — the origin (0, 0) represents a city's average unemployment and average crime rate. The FE regression line (green) passes through the origin by construction and is estimated purely from within-city year-on-year changes, with all time-constant city characteristics removed."
+#| fig-height: 7
+
+mod_fe_dm  <- lm(crime_dm ~ unem_dm, data = df_demean_demo)
+beta_fe_dm <- round(coef(mod_fe_dm)["unem_dm"], 3)
+
+# Build a label data frame for the FE slope annotation (bottom panel only)
+label_df <- data.frame(
+  x     = Inf,
+  y     = -Inf,
+  label = paste0("FE slope = ", beta_fe_dm),
+  panel = factor(
+    "De-meaned data\n(within-city variation only)",
+    levels = c("Original data\n(between + within variation)",
+               "De-meaned data\n(within-city variation only)")
+  )
+)
+
+# Build a label data frame for the OLS slope annotation (top panel only)
+mod_ols    <- lm(crime ~ unem, data = df_crime)
+beta_ols   <- round(coef(mod_ols)["unem"], 3)
+label_ols_df <- data.frame(
+  x     = Inf,
+  y     = -Inf,
+  label = paste0("OLS slope = ", beta_ols),
+  panel = factor(
+    "Original data\n(between + within variation)",
+    levels = c("Original data\n(between + within variation)",
+               "De-meaned data\n(within-city variation only)")
+  )
+)
+
+# Combine original and de-meaned data into one long frame for faceting
+df_plot_combined <- bind_rows(
+  df_crime |>
+    transmute(x = unem, y = crime,
+              panel = "Original data\n(between + within variation)"),
+  df_demean_demo |>
+    transmute(x = unem_dm, y = crime_dm,
+              panel = "De-meaned data\n(within-city variation only)")
+) |>
+  mutate(panel = factor(panel,
+                        levels = c("Original data\n(between + within variation)",
+                                   "De-meaned data\n(within-city variation only)")))
+
+ggplot(df_plot_combined, aes(x = x, y = y)) +
+  # Reference lines at zero for the de-meaned panel:
+  # x = 0 means "unemployment is at this city's average"; y = 0 means "crime is at this city's average"
+  geom_hline(data = \(d) filter(d, str_detect(panel, "De-meaned")),
+             yintercept = 0, colour = "grey60", linetype = "dashed", linewidth = 0.5) +
+  geom_vline(data = \(d) filter(d, str_detect(panel, "De-meaned")),
+             xintercept = 0, colour = "grey60", linetype = "dashed", linewidth = 0.5) +
+  geom_point(aes(colour = panel), alpha = 0.55, size = 2) +
+  # Regression line: pooled OLS on raw data (top) vs FE / within estimator on de-meaned data (bottom)
+  geom_smooth(method = "lm", se = FALSE,
+              aes(colour = panel), linewidth = 1.1) +
+  scale_colour_manual(values = c(
+    "Original data\n(between + within variation)"  = "#E41A1C",
+    "De-meaned data\n(within-city variation only)" = "#2b8a2b"
+  ), guide = "none") +
+  # Annotate slopes in the corner of each panel
+  geom_text(data = label_ols_df, aes(x = x, y = y, label = label),
+            colour = "#E41A1C", fontface = "bold", size = 3.4,
+            hjust = 1.05, vjust = -0.5, inherit.aes = FALSE) +
+  geom_text(data = label_df, aes(x = x, y = y, label = label),
+            colour = "#2b8a2b", fontface = "bold", size = 3.4,
+            hjust = 1.05, vjust = -0.5, inherit.aes = FALSE) +
+  facet_wrap(~ panel, ncol = 1, scales = "free") +
+  labs(
+    x     = NULL,
+    y     = NULL,
+    title = "The within transformation removes between-city differences",
+    # Shared axis hint placed via subtitle; actual labels set per-panel below
+    subtitle = "Top: unemployment rate (%) vs crime rate — Bottom: deviation from each city's own mean (Δ from city average)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.subtitle = element_text(size = 10, colour = "grey40"))
+```
+
+### 5.2 The Least Squares Dummy Variable (LSDV) Approach
+
+An equivalent approach adds an indicator variable for each unit $i > 1$, giving every unit its own intercept:
+
+$$y_{it} = \sum_{i=1}^N \alpha_i D_i + \mathbf{x}_{it}\boldsymbol{\beta} + \varepsilon_{it}$$
+
+where $D_i$ is a dummy equal to 1 for unit $i$ and 0 otherwise. The LSDV and within estimators yield numerically **identical** coefficients $\hat{\boldsymbol{\beta}}$. In practice, the LSDV approach becomes computationally expensive when $N$ is large, because it requires estimating $N - 1$ additional parameters and constructing a high-dimensional design matrix. The within transformation is generally preferred.
+
+::: callout-note
+### Why are they numerically identical?
+
+Adding $N$ unit dummies is equivalent to projecting out (partialling out) all unit-level variation from both $y_{it}$ and $\mathbf{x}_{it}$. The Frisch-Waugh-Lovell theorem guarantees that the coefficient on $\mathbf{x}_{it}$ in the full LSDV regression equals the coefficient from the regression of demeaned $y$ on demeaned $\mathbf{x}$. Same information, same estimator — just different computational routes.
+:::
+
+------------------------------------------------------------------------
+
+## Step 6 — First Differencing
+
+For the special case of $T = 2$, a particularly transparent approach is **first differencing**. Subtracting the $t = 1$ equation from the $t = 2$ equation:
+
+$$\Delta y_i = \delta_0 + \beta_1 \Delta \text{unemployment}_i + \Delta \varepsilon_i$$
+
+where $\Delta$ denotes the change from period 1 to period 2. Because $a_i$ is time-constant, $a_{i2} - a_{i1} = 0$ and the unobserved effect drops out exactly. OLS on the differenced equation is unbiased and consistent under the same strict exogeneity assumption.
+
+For $T = 2$, first differencing and the within estimator are **numerically identical** — they produce the same $\hat\beta_1$. For $T > 2$, they diverge: first differencing uses consecutive changes, while the within estimator uses deviations from the overall unit mean. The choice between them then depends on assumptions about the serial correlation structure of $\varepsilon_{it}$.
+
+More generally, for $T \geq 2$, the first-difference estimator is:
+
+$$\Delta y_{it} = \Delta \mathbf{x}_{it}\boldsymbol{\beta} + \Delta \varepsilon_{it}, \quad t = 2, \dots, T$$
+
+```{r first-diff}
+#| code-fold: true
+#| code-summary: "Implement first differencing on crime panel"
+
+# Reshape to wide, compute differences
+df_fd <- df_crime |>
+  select(city, year, unem, crime) |>
+  pivot_wider(names_from = year, values_from = c(unem, crime)) |>
+  mutate(
+    delta_unem  = unem_1987  - unem_1982,
+    delta_crime = crime_1987 - crime_1982
+  )
+
+mod_fd     <- lm(delta_crime ~ delta_unem, data = df_fd)
+beta_fd    <- round(coef(mod_fd)["delta_unem"], 3)
+
+# Within (FE) via plm for comparison
+pdata_c    <- pdata.frame(df_crime, index = c("city", "year"))
+mod_fe_plm <- plm(crime ~ unem + d87, data = pdata_c, model = "within")
+beta_fe_c  <- round(coef(mod_fe_plm)["unem"], 3)
+
+tibble(
+  Estimator = c("Pooled OLS", "First Difference", "Fixed Effects (within)"),
+  `β̂ (unem)` = c(beta_pool, beta_fd, beta_fe_c),
+  `True β`   = true_beta_crime,
+  Bias       = round(c(beta_pool, beta_fd, beta_fe_c) - true_beta_crime, 3),
+  Equivalence = c("—",
+                  "= FE for T = 2",
+                  "= FD for T = 2")
+) |>
+  kable(align = "lcccc",
+        caption = "Table 7 — First Difference and FE are numerically identical when T = 2")
+```
+
+```{r fd-plot}
+#| code-fold: true
+#| code-summary: "Plot first-differenced data"
+#| fig-cap: "Figure 6 — First-differenced regression: changes in unemployment predict changes in crime. Comparing cities to themselves eliminates all time-constant confounders."
+#| fig-height: 4
+
+ggplot(df_fd, aes(x = delta_unem, y = delta_crime)) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  geom_vline(xintercept = 0, colour = "grey70", linetype = "dashed") +
+  geom_point(colour = "#4DAF4A", alpha = 0.75, size = 2.5) +
+  geom_smooth(method = "lm", se = TRUE, colour = "#2b8a2b",
+              fill = "#4DAF4A", alpha = 0.15, linewidth = 1.1) +
+  annotate("text", x = max(df_fd$delta_unem) - 0.2,
+           y = min(df_fd$delta_crime) + 3,
+           label = paste0("FD slope = ", beta_fd,
+                          "  (≈ true β = ", true_beta_crime, ")"),
+           colour = "#2b8a2b", fontface = "bold", size = 3.5, hjust = 1) +
+  labs(x = "Δ Unemployment (1987 − 1982)", y = "Δ Crime rate (1987 − 1982)",
+       title = "First-differenced regression: within-city changes only",
+       subtitle = "City-level unobserved heterogeneity has been differenced away") +
+  theme_minimal(base_size = 13)
+```
+
+::: {.callout-tip collapse="true"}
+### When to choose first differencing over the within estimator
+
+Both FD and FE (within) are consistent under strict exogeneity. For $T = 2$ they are identical, so the choice is irrelevant. For $T > 2$:
+
+- **FE** is more efficient when $\varepsilon_{it}$ is serially uncorrelated (standard assumption).
+- **FD** is more efficient when $\varepsilon_{it}$ follows a **random walk** — i.e., when shocks are permanent.
+- If neither assumption is clearly supported, FE is the default in social science, with clustered standard errors to handle any residual serial correlation.
+:::
+
+------------------------------------------------------------------------
+
+## Step 7 — Implementing Fixed Effects in R
+
+The crime rate example provides a clean illustration. The model is:
+
+$$\text{crime\_rate}_{it} = \beta_0 + \delta_0 \, \text{d87}_{t} + \beta_1 \, \text{unemployment}_{it} + a_i + \varepsilon_{it}$$
+
+**LSDV via `lm()`**: Each city receives its own intercept through `factor(city)`, which R expands into $N - 1$ binary indicator variables (one city serves as the reference category, omitted to avoid perfect collinearity).
+
+```{r fe-lsdv}
+#| code-fold: true
+#| code-summary: "LSDV approach with lm()"
+
+# LSDV — correct but generates N-1 city dummies
+mod_lsdv <- lm(crime ~ d87 + unem + factor(city), data = df_crime)
+beta_lsdv <- round(coef(mod_lsdv)["unem"], 3)
+cat("LSDV estimate (lm):", beta_lsdv, "\n")
+```
+
+**Within estimator via `plm()`**: Setting `model = "within"` instructs `plm` to apply the within transformation: it demeaning all variables by unit and estimates $\boldsymbol{\beta}$ from the residual variation. This is equivalent to LSDV but does not construct the full dummy matrix. For very large $N$, the `fixest` package's `feols()` function is even faster and clusters standard errors by default.
+
+```{r fe-plm}
+#| code-fold: true
+#| code-summary: "Within estimator with plm()"
+
+# Declare panel structure
+pdata_fe   <- pdata.frame(df_crime, index = c("city", "year"))
+
+# Within (FE) estimator
+mod_fe_plm2  <- plm(crime ~ unem + d87, data = pdata_fe, model = "within")
+beta_plm     <- round(coef(mod_fe_plm2)["unem"], 3)
+cat("plm (within) estimate:", beta_plm, "\n")
+cat("True beta:            ", true_beta_crime, "\n")
+```
+
+```{r fe-comparison}
+#| code-fold: true
+#| code-summary: "Full comparison table: OLS, LSDV, plm, FD"
+
+tibble(
+  Estimator    = c("Pooled OLS", "LSDV (lm)", "Within (plm)", "First Difference"),
+  `β̂ (unem)`  = c(beta_pool, beta_lsdv, beta_plm, beta_fd),
+  `True β`     = true_beta_crime,
+  Bias         = round(c(beta_pool, beta_lsdv, beta_plm, beta_fd) -
+                         true_beta_crime, 3),
+  `Approach`   = c("No FE", "N−1 dummies", "Within transform", "Δ regression")
+) |>
+  kable(align = "lcccc",
+        caption = "Table 8 — All four estimators on the crime panel: LSDV and plm(within) are identical")
+```
+
+::: callout-note
+### Key implementation points
+
+- **LSDV and `plm(model = "within")`** produce numerically identical $\hat\beta_{\text{unem}}$ — the displayed numbers may differ by rounding only.
+- **Time-invariant predictors** (e.g., region, whether a city is coastal) are collinear with the city fixed effects and are automatically dropped. If estimating time-invariant effects matters, use Random Effects or a hybrid model.
+- **Standard errors**: OLS standard errors assume independent errors. For panel data, cluster at the unit level using `coeftest(mod, vcov = vcovHC(mod, cluster = "group"))` from the `sandwich` and `lmtest` packages.
+:::
+
+```{r fe-summary-output}
+#| code-fold: true
+#| code-summary: "plm summary with cluster-robust standard errors"
+
+coeftest(mod_fe_plm2, vcov = vcovHC(mod_fe_plm2, cluster = "group"))
+```
+
+------------------------------------------------------------------------
+
+## Step 8 — Limitations and Practical Considerations
+
+Fixed effects estimation is not without cost. Four limitations deserve particular attention.
+
+::: {.callout-warning}
+### 1. Loss of between-unit variation
+
+The within transformation discards **all information about differences between units**. If $\mathbf{x}_{it}$ varies little within units over time — common for slowly-changing variables like educational attainment or institutional quality — the within estimator will have high variance and low precision, even if the sample is large in the cross-sectional dimension.
+
+As a rule of thumb: the smaller the within-unit variance relative to the between-unit variance (low *intra-class correlation*), the more imprecise FE estimates become.
+:::
+
+::: {.callout-warning}
+### 2. Time-varying confounders
+
+Fixed effects control only for *time-constant* unobservables. If important confounders **change over time** (e.g., a new policing policy enacted mid-panel, a firm-level restructuring), $a_i$ does not absorb them, and $\hat\beta_1$ remains biased. Researchers should always assess whether the key identification assumption — no time-varying confounders correlated with the regressor — is credible in their setting.
+:::
+
+::: {.callout-warning}
+### 3. Serial correlation
+
+Observations on the same unit across time are not independent. Standard OLS standard errors, which assume independent errors, will be **too small**, yielding artificially narrow confidence intervals and inflated test statistics. The standard remedy is to cluster standard errors at the unit level. `feols` does this by default; when using `lm()`, apply `coeftest()` with clustered variance-covariance estimates.
+:::
+
+::: {.callout-warning}
+### 4. Attrition and data collection challenges
+
+Panel data are more costly to collect than cross-sections. **Attrition** — units dropping out of the panel between waves — is a pervasive practical problem. If attrition is non-random (e.g., more successful firms survive, sicker patients drop out of health studies), the observed panel becomes a selected sample, and estimates may not generalise to the full population.
+:::
+
+```{r limitations-summary}
+#| code-fold: true
+#| code-summary: "Summary of FE limitations"
+
+tibble(
+  Limitation              = c("Loss of between variation",
+                               "Time-varying confounders",
+                               "Serial correlation",
+                               "Attrition"),
+  `When it matters most`  = c("Slowly-changing predictors (educ, institutions)",
+                               "Policy changes mid-panel; structural shocks",
+                               "Long panels (T ≫ 2); persistent processes",
+                               "Voluntary surveys; firm/patient panels"),
+  `Practical remedy`      = c("RE or hybrid model; report within-variance ratio",
+                               "Include time × covariate interactions; DiD design",
+                               "Cluster SEs at unit level (default in feols)",
+                               "Test for non-random attrition; IPW correction")
+) |>
+  kable(align = "lll",
+        caption = "Table 9 — FE limitations and practical responses")
+```
+
+------------------------------------------------------------------------
+
+## When to Use Panel Methods
+
+Panel methods are most valuable when:
+
+- The research question concerns **causal effects** of a time-varying treatment or predictor on an outcome.
+- There are plausible **time-constant confounders** that cannot be directly measured or controlled for.
+- The panel has enough **within-unit variation** to identify the parameter of interest.
+
+They are less suitable when:
+
+- The key predictors of interest are **time-invariant** (FE will drop them; consider RE or between-effects models).
+- The panel is very short ($T$ is small) and within-unit variation is minimal.
+- **Attrition is severe** and likely non-random.
+
+
+------------------------------------------------------------------------
+
+## Summary
+
+In this chapter you learned:
+
+1.  **Panel data** follow the same units across time, enabling within-unit identification that is immune to time-constant unobserved heterogeneity.
+
+2.  **Pooled OLS** is biased when $\text{Cov}(a_i, \mathbf{x}_{it}) \neq 0$ — a near-universal condition in observational data.
+
+3.  **The within transformation** (de-meaning) eliminates $a_i$ algebraically, yielding the FE estimator. The LSDV approach (unit dummies) is equivalent but computationally expensive for large $N$.
+
+4.  **First differencing** achieves the same elimination by taking consecutive changes. For $T = 2$, FD and FE are numerically identical.
+
+5.  **In R**, `feols(y ~ x | unit, data)` from `fixest` is the recommended implementation: fast, handles large panels, and clusters standard errors by default.
+
+6.  **FE has real costs**: it discards between-unit variation, cannot estimate time-invariant effects, and requires clustered standard errors to be valid. Random Effects — the subject of the next chapter — offers a partial remedy.

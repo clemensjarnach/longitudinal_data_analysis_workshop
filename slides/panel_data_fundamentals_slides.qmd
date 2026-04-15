@@ -1,0 +1,222 @@
+---
+title: "Panel Data Fundamentals"
+subtitle: "Introduction to Longitudinal Data Analysis with R"
+author: "Dr Clemens Jarnach"
+institute: "University of Oxford — Grand Union DTP"
+date: "2025-26"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    progress: true
+    history: true
+    preview-links: auto
+    chalkboard: false
+    transition: fade
+    transition-speed: fast
+    incremental: false
+    smaller: false
+    scrollable: false
+    highlight-style: atom-one
+    code-block-bg: "#f0f0f0"
+    code-block-border-left: "#045a8d"
+    code-copy: true
+    footer: "Longitudinal Data Analysis with R"
+    logo: ""
+    css: ""
+    self-contained: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## What is Panel Data?
+
+-   A dataset that tracks the **same units** (individuals, firms, countries) **over time**
+-   Also called **longitudinal data** or **cross-sectional time-series** data
+-   Combines two dimensions:
+    -   **Cross-sectional**: variation across units $i$
+    -   **Time-series**: variation over time $t$
+
+::: callout-note
+Each observation is indexed by both a unit $i$ and a time period $t$: $(y_{it}, x_{it})$
+:::
+
+------------------------------------------------------------------------
+
+## Why Panel Data? Key Advantages
+
+-   Combines **cross-sectional + time-series variation**
+
+::: incremental
+-   Enables:
+    -   Control for **individual heterogeneity**
+    -   More **efficient estimation** (greater variability)
+    -   Analysis of **dynamic processes**
+    -   Identification of effects **not visible in cross-sections**
+    -   Use of **micro-level data** (better measurement)
+    -   Cross-dimensional inference (time $\leftrightarrow$ individuals)
+:::
+
+------------------------------------------------------------------------
+
+## The Core Problem: Unobserved Heterogeneity
+
+Consider the model:
+
+$$y_{it} = \alpha + \beta x_{it} + \gamma z_i + u_{it}$$
+
+-   $z_i$ is an **unobserved**, time-invariant characteristic
+-   If $z_i$ is correlated with $x_{it}$ → **omitted variable bias**
+-   OLS estimates of $\beta$ are **inconsistent**
+
+::: callout-warning
+**Key condition for consistency:** $z_i$ must be uncorrelated with regressors and the error term.
+:::
+
+------------------------------------------------------------------------
+
+## Intuition: Agricultural Example
+
+Suppose farm output depends on:
+
+| Variable           | Status     |
+|--------------------|------------|
+| Labour $x_{it}$    | Observed   |
+| Soil quality $z_i$ | Unobserved |
+
+**The problem:**
+
+-   Farmers likely adjust labour based on their soil quality
+-   $x_{it}$ is correlated with $z_i$
+-   $\Rightarrow$ **OLS becomes inconsistent**
+
+------------------------------------------------------------------------
+
+## The General Panel Data Model
+
+Absorb unobserved heterogeneity into an individual-specific intercept:
+
+$$y_{it} = \alpha_i + \beta x_{it} + u_{it}$$
+
+-   $\alpha_i$ captures all **time-invariant unobserved factors** for unit $i$
+-   The goal: **remove or control for** $\alpha_i$
+
+::: fragment
+This is the starting point for both **Fixed Effects** and **Random Effects** models.
+:::
+
+------------------------------------------------------------------------
+
+## Three Strategies for Eliminating $\alpha_i$ {.section}
+
+------------------------------------------------------------------------
+
+## Strategy 1: First-Difference (FD) Estimator
+
+**Idea:** Subtract last period's equation from the current period:
+
+$$\Delta y_{it} = \beta \, \Delta x_{it} + \Delta u_{it}$$
+
+where $\Delta y_{it} = y_{it} - y_{i,t-1}$
+
+::::: columns
+::: {.column width="50%"}
+**Advantages**
+
+-   Eliminates $\alpha_i$ completely
+-   Estimable via pooled OLS
+:::
+
+::: {.column width="50%"}
+**Disadvantages**
+
+-   Loses first time period
+-   Can amplify measurement error
+:::
+:::::
+
+------------------------------------------------------------------------
+
+## Strategy 2: Least Squares Dummy Variables (LSDV)
+
+**Approach:** Include a dummy variable $d_i$ for each unit:
+
+$$y_{it} = \sum_i \alpha_i d_i + \beta x_{it} + u_{it}$$
+
+::: incremental
+-   Estimates a **separate intercept** $\alpha_i$ for each unit
+-   $\hat{\beta}$ is $\sqrt{NT}$-consistent
+-   Individual effects estimated with $\sqrt{T}$-consistency
+-   **Drawback:** $N$ additional parameters → loss of degrees of freedom; computationally costly for large $N$
+:::
+
+------------------------------------------------------------------------
+
+## Strategy 3: Fixed Effects (Within) Estimator
+
+**Idea:** Remove $\alpha_i$ by **demeaning** each variable over time:
+
+$$\tilde{y}_{it} = y_{it} - \bar{y}_{i}, \qquad \tilde{x}_{it} = x_{it} - \bar{x}_{i}$$
+
+This yields the **within-transformed** model:
+
+$$\tilde{y}_{it} = \beta \, \tilde{x}_{it} + \tilde{u}_{it}$$
+
+::: callout-tip
+$\alpha_i$ cancels out because $\bar{\alpha}_i = \alpha_i$. Only **within-unit variation over time** identifies $\beta$.
+:::
+
+------------------------------------------------------------------------
+
+## Fixed Effects: Properties and Limitations
+
+::::: columns
+::: {.column width="55%"}
+**Advantages**
+
+-   Eliminates $\alpha_i$ without dummy variables
+-   Computationally efficient
+-   Consistent even when $\alpha_i$ is correlated with $x_{it}$
+-   Standard approach in applied work
+:::
+
+::: {.column width="45%"}
+**Limitations**
+
+-   Cannot estimate effects of **time-invariant** variables (e.g. gender, country)
+-   Relies solely on **within-unit** variation
+-   Less efficient when $\alpha_i$ is uncorrelated with $x_{it}$
+:::
+:::::
+
+------------------------------------------------------------------------
+
+## FD vs LSDV vs Within Estimator
+
+| Method           | Removes $\alpha_i$? | Parameters  | Notes                |
+|------------------|---------------------|-------------|----------------------|
+| First-difference | Yes                 | None added  | Loses one period     |
+| LSDV             | Yes                 | $N$ dummies | Costly for large $N$ |
+| Within (FE)      | Yes                 | None added  | Standard choice      |
+
+::: fragment
+All three are **algebraically equivalent** under strict exogeneity — the within estimator is preferred for computational efficiency.
+:::
+
+------------------------------------------------------------------------
+
+## Key Takeaways
+
+1.  Panel data solves **unobserved heterogeneity** by exploiting **within-unit variation over time**
+
+2.  The core challenge: unobserved $\alpha_i$ correlated with regressors $\Rightarrow$ OLS bias
+
+3.  Three equivalent strategies: **first-differencing**, **LSDV**, **within (demeaning)**
+
+4.  **Fixed Effects = most widely used practical method**
+
+::: callout-note
+Next: when should we use **Random Effects** instead, and how do we choose?
+:::
