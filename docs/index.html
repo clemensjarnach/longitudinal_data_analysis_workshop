@@ -57,7 +57,27 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
@@ -67,7 +87,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./exercise_farm_panel.html" rel="next">
+<link href="./01_exercise_farm_panel_fe.html" rel="next">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
@@ -157,38 +177,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./exercise_farm_panel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Interactive Exercise: Which Farmers Are More Productive?</span></span></a>
+  <a href="./01_exercise_farm_panel_fe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Which Farmers Are More Productive?</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./panel_data_fundamentals.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Panel Data Fundamentals</span></span></a>
+  <a href="./02_panel_data_and_fixed_effects.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Panel Data Fundamentals and Fixed Effects</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./panel_data_and_fe.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Panel Data Fundamentals and Fixed Effects</span></span></a>
+  <a href="./03_r_fundamentals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">An R Refresher</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./r_fundamentals.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">R Fundamentals</span></span></a>
+  <a href="./04_panel_data_in_r.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Working with Panel Data in R</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./panel_data_in_R.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Panel Data in R</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./exercise_farm_panel_re.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Fixed or Random — Which Model Fits?</span></span></a>
+  <a href="./05_exercise_farm_panel_re.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Fixed or Random — Which Model Fits?</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -212,7 +226,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./appendix.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Appendix</span></span></a>
+ <span class="menu-text">Appendix</span></a>
   </div>
 </li>
     </ul>
@@ -300,9 +314,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="why-use-panel-data-analysis">Why use panel data analysis?</h2>
 <p>Much of empirical social science is driven by causal questions: we want to know not just whether two things are related, but whether one actually brings about the other. Using purely cross-sectional data, we can compare different units — people, firms, countries — and test whether they differ according to some treatment or variable of interest. But this approach has a well-known limitation: those units may differ in many other respects, and we are unlikely to observe all of them. The result is that we may mistake confounded correlation for causation.</p>
 <p>The gold standard for establishing causation is the randomised controlled trial (RCT). By randomly assigning some units to treatment, we ensure that no unobserved characteristics can be systematically correlated with who receives it — treatment and control groups are, on average, identical in all respects except the intervention itself. However, random assignment is often ethically or practically impossible in the social sciences. Consider studying the effects of education, marriage, or childbirth — the ethics committee will not be sympathetic.</p>
-<p>Panel data offer a pragmatic middle ground. Rather than comparing different units at a single point in time, we compare the <em>same unit to itself</em> across time: a unit before and after some change, in other words “comparing like with like” <span class="citation" data-cites="firebaughSevenRulesSocial2008">(<a href="references.html#ref-firebaughSevenRulesSocial2008" role="doc-biblioref"><strong>firebaughSevenRulesSocial2008?</strong></a>)</span>. Stable, unobserved characteristics — the factors that would otherwise confound our estimates — drop out of the analysis, because they are constant within each unit. This is not as secure as an RCT, but it is far more feasible for most social science research questions and substantially more credible than naive cross-sectional comparisons.</p>
+<p>Panel data offer a pragmatic middle ground. Rather than comparing different units at a single point in time, we compare the <em>same unit to itself</em> across time: a unit before and after some change, in other words “comparing like with like” <span class="citation" data-cites="firebaughSevenRulesSocial2008">(<a href="references.html#ref-firebaughSevenRulesSocial2008" role="doc-biblioref">Firebaugh 2008</a>)</span>. Stable, unobserved characteristics — the factors that would otherwise confound our estimates — drop out of the analysis, because they are constant within each unit. This is not as secure as an RCT, but it is far more feasible for most social science research questions and substantially more credible than naive cross-sectional comparisons.</p>
 <p><img src="fig/NHK_Control.gif" class="img-fluid" style="width:48.0%"> <img src="fig/NHK_FE.gif" class="img-fluid" style="width:48.0%"></p>
-<p>Illustration by <span class="citation" data-cites="huntington-kleinEffectIntroductionResearch2025">(<a href="references.html#ref-huntington-kleinEffectIntroductionResearch2025" role="doc-biblioref"><strong>huntington-kleinEffectIntroductionResearch2025?</strong></a>)</span>: Introducing a binary control variable (left) and introducing fixed effects (right)</p>
+<p>Illustration by <span class="citation" data-cites="huntington-kleinEffectIntroductionResearch2025">Huntington-Klein (<a href="references.html#ref-huntington-kleinEffectIntroductionResearch2025" role="doc-biblioref">2025</a>)</span>: Introducing a binary control variable (left) and introducing fixed effects (right)</p>
 <p>This workshop equips you with the conceptual tools and R skills to work with panel data: to move from describing patterns to making defensible causal claims — or at least to being honest about when you cannot.</p>
 </section>
 <section id="objectives" class="level2 unnumbered">
@@ -371,6 +385,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <!-- -->
 
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list" style="display: none">
+<div id="ref-firebaughSevenRulesSocial2008" class="csl-entry" role="listitem">
+Firebaugh, Glenn. 2008. <em>Seven <span>Rules</span> for <span>Social Research</span></em>. Princeton University Press. <a href="https://doi.org/10.1515/9780691190433">https://doi.org/10.1515/9780691190433</a>.
+</div>
+<div id="ref-huntington-kleinEffectIntroductionResearch2025" class="csl-entry" role="listitem">
+Huntington-Klein, Nick. 2025. <em>The Effect : An Introduction to Research Design and Causality</em>. Second edition. Boca Raton, FL ; CRC Press.
+</div>
+</div>
 </section>
 </section>
 
@@ -830,8 +852,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="nav-page nav-page-previous">
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./exercise_farm_panel.html" class="pagination-link" aria-label="Interactive Exercise: Which Farmers Are More Productive?">
-        <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Interactive Exercise: Which Farmers Are More Productive?</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./01_exercise_farm_panel_fe.html" class="pagination-link" aria-label="Which Farmers Are More Productive?">
+        <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Which Farmers Are More Productive?</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">

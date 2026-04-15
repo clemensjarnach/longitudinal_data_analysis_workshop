@@ -1,0 +1,609 @@
+---
+title: "An R Refresher"
+subtitle: "Essential Programming Skills for Longitudinal Data Analysis"
+author: "[Dr Clemens Jarnach](https://clemensjarnach.github.io)"
+affiliation: "Oxford Martin School, University of Oxford"
+date: "03-18-2026"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: false
+    theme: cosmo
+    self-contained: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+# Generate panel_data.csv if it does not already exist
+if (!file.exists("files/panel_data.csv")) {
+  source("simple_panel_data.r")
+}
+
+panel_data <- readr::read_csv("files/panel_data.csv", show_col_types = FALSE)
+```
+
+Before we run models, we need to ensure you're comfortable with R itself. This chapter introduces the R programming concepts you will need throughout the workshop. If you are already comfortable with R, treat it as a quick reference. If you are new to R, work through it carefully — the material here underpins everything that follows.
+
+::: callout-tip
+## Running code
+
+All code blocks in this workshop can be run interactively. Open the `.qmd` source file in RStudio, place your cursor inside a code chunk, and press **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) to run a single line, or **Ctrl+Shift+Enter** to run the entire chunk.
+:::
+
+------------------------------------------------------------------------
+
+## Basic Operations and Assignment
+
+R can be used as a calculator, but its real power lies in storing and manipulating values. The assignment operator `<-` binds a value to a name in the current environment.
+
+```{r}
+1 + 3   
+# arithmetic evaluation
+```
+
+```{r}
+2^8             # exponentiation
+```
+
+```{r}
+17 %% 5         # modulo (remainder)
+```
+
+```{r}
+17 %/% 5        # integer division
+```
+
+```{r}
+
+a <- 9          # assignment: bind 9 to the name 'a'
+```
+
+```{r}
+sqrt(a)         # apply a function to an object
+```
+
+```{r}
+b <- sqrt(a)
+```
+
+```{r}
+a == b          # logical comparison: are they equal?
+```
+
+```{r}
+a != b          # not equal
+```
+
+```{r}
+a > 5           # greater than
+```
+
+```{r}
+ls()            # list all objects in the current environment
+```
+
+::: callout-note
+R is case-sensitive: `A` and `a` are different objects. Object names can contain letters, digits, `.` and `_`, but must start with a letter or `.`.
+:::
+
+------------------------------------------------------------------------
+
+## Data Types
+
+Every value in R has a type. The most common scalar types are:
+
+```{r}
+class(3.14)         # numeric (double)
+class(42L)          # integer (note: I used the L suffix to tell R this is an integer)
+class("hello")      # character
+class(TRUE)         # logical
+class(2 + 3i)       # complex
+
+# Type coercion
+as.numeric("3.14")
+as.integer(42)
+as.character(100)
+as.logical(0)       # 0 is FALSE; anything non-zero is TRUE
+is.na(NA)           # test for missing value
+```
+
+------------------------------------------------------------------------
+
+## Vectors
+
+A vector is the fundamental data structure in R — an ordered collection of values of the **same type**. Almost all operations in R are vectorised, meaning they apply element-wise without explicit loops.
+
+```{r}
+x <- c(1, 3, 5)          # combine values into a vector
+y <- c("one", "three", "five")
+```
+
+```{r}
+# Indexing (1-based)
+x[1]                      # first element
+x[c(1, 3)]                # first and third elements
+x[-2]                     # all except the second
+```
+
+```{r}
+# Sequences
+a <- 1:10
+b <- seq(from = 0, to = 1, by = 0.25)
+c_rep <- rep(c(1, 2), times = 3)
+c_rep
+```
+
+```{r}
+# Vectorised operations — applied element-wise
+x * 2
+x + c(10, 20, 30)
+```
+
+```{r}
+# Logical operations on vectors
+x > 2
+any(x > 2)                # is any element > 2?
+all(x > 2)                # are all elements > 2?
+which(x > 2)              # indices where condition is TRUE
+```
+
+```{r}
+# Common summary functions
+length(x)
+sum(x)
+mean(x)
+sd(x)
+min(x); max(x)
+```
+
+------------------------------------------------------------------------
+
+## Matrices
+
+A matrix is a two-dimensional vector: all elements share the same type, and values are arranged in rows and columns. In longitudinal data analysis, matrices appear in covariance and correlation structures, variance-component decompositions, and balanced panel layouts — understanding matrix indexing is useful for inspecting model objects and constructing derived quantities.
+
+```{r}
+m <- matrix(1:25, nrow = 5, ncol = 5)
+m
+```
+
+```{r}
+# Element access
+m[1, 2]                   # row 1, column 2
+m[1, ]                    # entire first row
+m[, 2]                    # entire second column
+m[2:3, 3:5]               # submatrix
+```
+
+```{r}
+# Dimensions
+nrow(m); ncol(m)
+dim(m)
+```
+
+```{r}
+# Matrix operations — useful for covariance and correlation matrices in panel diagnostics
+t(m)                      # transpose
+m %*% t(m)                # matrix multiplication (not element-wise!)
+diag(m)                   # diagonal elements
+```
+
+```{r}
+# Compute a correlation matrix — useful for checking multicollinearity among panel predictors
+vars <- data.frame(
+  gdp_growth = c(1.2, 2.3, 1.8, 3.1, 0.9, 2.7),
+  trade_open  = c(0.4, 0.9, 0.6, 1.1, 0.3, 0.8),
+  population  = c(10,  12,  11,  14,  9,   13)
+)
+cor(vars)                 # pairwise correlations between panel-level variables
+```
+
+------------------------------------------------------------------------
+
+## Lists
+
+Lists are R's most flexible container: each element can hold any object of any type or length. Many R functions return lists (model output from `plm`, `lme4`, or `fixest`, etc.), so you need to know how to navigate them.
+
+```{r}
+person <- list(
+  name    = "Alice",
+  age     = 34,
+  scores  = c(88, 92, 79),
+  active  = TRUE
+)
+```
+
+```{r}
+# Access by name
+person$name
+person[["age"]]
+```
+
+```{r}
+# Access by position
+person[[3]]               # third element (the scores vector)
+person[[3]][2]            # second score
+```
+
+```{r}
+# Inspect structure
+str(person)
+length(person)
+names(person)
+```
+
+------------------------------------------------------------------------
+
+## Data Frames
+
+A data frame is the standard rectangular data structure in R: a list of vectors of equal length, where each vector is a column. Think of it as a spreadsheet or database table. Longitudinal datasets are naturally represented as data frames, where each row is an observation for a given unit (individual, country, firm) at a given time point.
+
+```{r}
+df <- data.frame(
+  id     = 1:5,
+  name   = c("Alice", "Bob", "Clara", "David", "Eva"),
+  degree = c(3, 7, 2, 5, 4),
+  active = c(TRUE, TRUE, FALSE, TRUE, FALSE),
+  stringsAsFactors = FALSE
+)
+
+df
+```
+
+```{r}
+# Column access
+df$name
+df[["degree"]]
+```
+
+```{r}
+# Row and column indexing
+df[1, ]                   # first row
+df[, 3]                   # third column
+df[df$active, ]           # rows where active == TRUE
+df[df$degree > 3, c("name", "degree")]
+```
+
+```{r}
+# Useful inspection functions
+nrow(df); ncol(df)
+head(df, 3)
+str(df)
+summary(df)
+```
+
+------------------------------------------------------------------------
+
+## Control Flow
+
+### Conditionals
+
+```{r}
+x <- 15
+
+if (x > 10) {
+  cat("x is greater than 10\n")
+} else if (x == 10) {
+  cat("x is exactly 10\n")
+} else {
+  cat("x is less than 10\n")
+}
+
+# ifelse() — vectorised conditional
+scores <- c(55, 72, 48, 91, 60)
+ifelse(scores >= 60, "pass", "fail")
+```
+
+### Loops
+
+In R, explicit loops are often avoidable thanks to vectorisation, but they are useful for iterative tasks and are worth knowing.
+
+```{r}
+# for loop
+for (i in 1:5) {
+  cat("Iteration:", i, "\n")
+}
+```
+
+```{r}
+# while loop
+count <- 0
+while (count < 3) {
+  count <- count + 1
+  cat("count is", count, "\n")
+}
+```
+
+```{r}
+# break and next
+for (i in 1:10) {
+  if (i == 4) next       # skip this iteration
+  if (i == 7) break      # exit the loop
+  cat(i, "")
+}
+```
+
+### Apply Functions
+
+The `apply` family offers a concise way to apply a function over a vector, list, or matrix — often replacing explicit loops.
+
+```{r}
+m <- matrix(1:12, nrow = 3)
+```
+
+```{r}
+apply(m, 1, sum)          # row sums
+apply(m, 2, mean)         # column means
+```
+
+```{r}
+nums <- list(a = 1:4, b = 5:10, c = 11:15)
+sapply(nums, mean)        # returns a named vector
+lapply(nums, length)      # returns a list
+```
+
+------------------------------------------------------------------------
+
+## Writing Functions
+
+Functions are the building blocks of reusable code. When you find yourself repeating the same operations, write a function.
+
+```{r}
+# Basic function definition
+greet <- function(name, greeting = "Hello") {
+  paste(greeting, name)
+}
+
+greet("Alice")
+greet("Bob", greeting = "Welcome")
+```
+
+```{r}
+# A more practical example: normalise a vector to [0, 1]
+normalise <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+```
+
+```{r}
+gdp_growth <- c(1.3, 3.7, 0.2, 4.9, 2.4)
+normalise(gdp_growth)
+```
+
+```{r}
+# Functions can return multiple values via a list
+describe <- function(x) {
+  list(n = length(x), mean = mean(x), sd = sd(x), range = range(x))
+}
+
+describe(gdp_growth)
+```
+
+------------------------------------------------------------------------
+
+## Data Wrangling with the Tidyverse
+
+The [tidyverse](https://www.tidyverse.org) is a collection of R packages designed around a consistent philosophy of tidy data and readable code. The core package for data manipulation is **dplyr**, which provides a small set of verbs that cover the vast majority of data-wrangling tasks.
+
+```{r}
+#| message: false
+#| warning: false
+
+library(tidyverse)
+```
+
+### The Pipe Operator
+
+The pipe `|>` (base R, since 4.1) or `%>%` (magrittr/tidyverse) passes the result of one expression as the first argument of the next. It allows you to write a sequence of transformations in the order they happen, which is much easier to read than nested function calls.
+
+```{r}
+# Without pipe — read inside out
+round(mean(c(1, 2, 3, 4, 5)), digits = 2)
+```
+
+```{r}
+# With pipe — read left to right
+c(1, 2, 3, 4, 5) |> mean() |> round(digits = 2)
+```
+
+### A Working Dataset
+
+We'll use a small cross-sectional dataset of survey respondents, representative of the kind of individual-level data you might encounter in longitudinal research.
+
+```{r}
+persons <- tibble(
+  id         = 1:8,
+  name       = c("Alice","Bob","Clara","David","Eva","Frank","Grace","Hugo"),
+  country    = c("UK","France","UK","Germany","France","UK","Germany","France"),
+  age        = c(32, 45, 28, 51, 38, 23, 47, 35),
+  income     = c(42000, 68000, 35000, 72000, 55000, 28000, 61000, 49000)
+)
+```
+
+```{r}
+persons
+```
+
+### filter() — Keep Rows
+
+```{r}
+# Keep only UK respondents
+persons |> filter(country == "UK")
+```
+
+```{r}
+# Multiple conditions
+persons |> filter(country == "France", age > 40)
+```
+
+```{r}
+# Using %in% for multiple values
+persons |> filter(country %in% c("UK", "Germany"))
+```
+
+### select() — Choose Columns
+
+```{r}
+persons |> select(name, country, income)
+```
+
+```{r}
+# Drop a column with -
+persons |> select(-id)
+```
+
+```{r}
+# Rename while selecting
+persons |> select(name, cntry = country, annual_income = income)
+```
+
+### mutate() — Create or Modify Columns
+
+```{r}
+persons |>
+  mutate(
+    older       = age >= 40,
+    income_z    = (income - mean(income)) / sd(income),   # standardise
+    label       = paste0(name, " (", country, ")")
+  )
+```
+
+### arrange() — Sort Rows
+
+```{r}
+persons |> arrange(desc(income))       # highest income first
+persons |> arrange(country, age)       # sort by two columns
+```
+
+### summarise() and group_by() — Aggregation
+
+```{r}
+# Overall summary
+persons |>
+  summarise(
+    n           = n(),
+    mean_income = mean(income),
+    sd_income   = sd(income),
+    max_age     = max(age)
+  )
+```
+
+```{r}
+# Summary by group — useful for comparing units in panel data
+persons |>
+  group_by(country) |>
+  summarise(
+    n           = n(),
+    mean_income = mean(income),
+    mean_age    = mean(age)
+  ) |>
+  arrange(desc(mean_income))
+```
+
+### Joining Tables
+
+Joins combine two data frames on a shared key column — essential in longitudinal work when merging panel waves with time-invariant attributes, or linking datasets from different sources.
+
+```{r}
+# Panel waves: repeated observations per person across two years
+waves <- tibble(
+  id   = c(1, 1, 2, 2, 3, 3, 4, 4),
+  year = c(2020, 2021, 2020, 2021, 2020, 2021, 2020, 2021),
+  income_obs = c(40000, 42000, 65000, 68000, 33000, 35000, 70000, 72000)
+)
+```
+
+```{r}
+# Attach time-invariant person attributes to the panel
+waves |>
+  left_join(persons |> select(id, name, country),
+            by = "id") |>
+  arrange(id, year)
+```
+
+### Reshaping Data
+
+```{r}
+# Wide to long (pivot_longer) — core operation when converting panel data to long format
+persons |>
+  select(name, age, income) |>
+  pivot_longer(cols = c(age, income),
+               names_to  = "variable",
+               values_to = "value")
+```
+
+```{r}
+# Long to wide (pivot_wider) — useful when reshaping repeated measures to one row per unit
+waves |>
+  select(id, year, income_obs) |>
+  pivot_wider(names_from = year, values_from = income_obs,
+              names_prefix = "income_")
+```
+
+------------------------------------------------------------------------
+
+## Reading and Writing Data
+
+```{r}
+#| eval: false
+
+# CSV files
+df <- read_csv("data/panel_data.csv")       # tidyverse (recommended)
+df <- read.csv("data/panel_data.csv")       # base R
+```
+
+```{r}
+#| eval: false
+write_csv(df, "data/panel_data_clean.csv")
+```
+
+```{r}
+#| eval: false
+# Excel files
+library(readxl)
+df <- read_excel("data/data.xlsx", sheet = 1)
+```
+
+```{r}
+#| eval: false
+# SPSS, Stata, SAS
+library(haven)
+df <- read_spss("data/survey.sav")
+df <- read_dta("data/survey.dta")
+```
+
+```{r}
+#| eval: false
+# R's native format
+saveRDS(df, "data/df.rds")
+df <- readRDS("data/df.rds")
+```
+
+------------------------------------------------------------------------
+
+## Quick Reference
+
+| Task                   | Function                                |
+|------------------------|-----------------------------------------|
+| Assign a value         | `x <- value`                            |
+| Create a vector        | `c(1, 2, 3)`                            |
+| Create a sequence      | `1:10`, `seq(0, 1, 0.1)`                |
+| Create a matrix        | `matrix(data, nrow, ncol)`              |
+| Create a data frame    | `data.frame()` / `tibble()`             |
+| Check an object's type | `class()`, `typeof()`                   |
+| Check dimensions       | `dim()`, `nrow()`, `ncol()`, `length()` |
+| Inspect structure      | `str()`, `summary()`, `head()`          |
+| Filter rows            | `filter()`                              |
+| Select columns         | `select()`                              |
+| Create columns         | `mutate()`                              |
+| Sort rows              | `arrange()`                             |
+| Aggregate              | `group_by()` + `summarise()`            |
+| Join tables            | `left_join()`, `inner_join()`           |
+| Reshape wide → long    | `pivot_longer()`                        |
+| Reshape long → wide    | `pivot_wider()`                         |

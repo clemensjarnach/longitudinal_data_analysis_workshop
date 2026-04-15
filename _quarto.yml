@@ -13,11 +13,11 @@ book:
   repo-url: https://github.com/clemensjarnach/social_network_analysis_workshop
   chapters:
     - index.qmd
-    - exercise_farm_panel.qmd
-    - panel_data_and_fe.qmd	
-    - r_fundamentals.qmd
-    - panel_data_in_R.qmd
-    - exercise_farm_panel_re.qmd
+    - 01_exercise_farm_panel_fe.qmd
+    - 02_panel_data_and_fixed_effects.qmd
+    - 03_r_fundamentals.qmd
+    - 04_panel_data_in_r.qmd
+    - 05_exercise_farm_panel_re.qmd
     - feedback.qmd
     - how_to_cite.qmd
     - references.qmd

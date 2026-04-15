@@ -1,0 +1,403 @@
+---
+title: "Which Farmers Are More Productive?"
+subtitle: "Discovering Unobserved Heterogeneity Through Farm Data"
+author: "Dr Clemens Jarnach"
+date: "2025-26"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-title: "Steps"
+    number-sections: false
+    theme: cosmo
+    code-fold: true
+    code-summary: "Show R code"
+    code-tools: true
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| code-fold: true
+#| code-summary: "Load packages"
+library(tidyverse)
+library(plm)
+library(knitr)
+library(RColorBrewer)
+
+# Colour palette (Oxford blue + accents)
+pal_farms <- brewer.pal(5, "Set2")
+```
+
+------------------------------------------------------------------------
+
+## Step 1 — Set the Scene
+
+> **You are economists hired by a Ministry of Agriculture.**
+
+You have been given data on **five farms**. Your task is to answer one policy question:
+
+> **Does increasing the number of workers raise farm productivity (output)?**
+
+Keep it simple for now: *more workers → more output … right?*
+
+------------------------------------------------------------------------
+
+## Step 2 — The Cross-Sectional Evidence
+
+Below is a snapshot of the five farms in a single year.
+
+```{r cross-section-data}
+#| code-fold: true
+#| code-summary: "Generate cross-sectional data"
+
+set.seed(42)
+
+# Unobserved farm quality (alpha_i) — higher-quality farms also hire more workers
+quality <- c(75, 70, 63, 52, 35)        # unobserved: A is best, E is worst
+farms   <- LETTERS[1:5]
+labour_cs <- c(10, 8, 6, 4, 2)          # correlated with quality!
+
+true_beta <- 2.5                          # true effect of one extra worker
+
+# Output = quality + beta * labour + small noise
+set.seed(42)
+output_cs <- quality + true_beta * labour_cs + rnorm(5, 0, 1.5)
+output_cs <- round(output_cs)
+
+df_cs <- tibble(
+  Farm   = farms,
+  Labour = labour_cs,
+  Output = output_cs
+)
+```
+
+```{r cross-section-table}
+#| code-fold: true
+#| code-summary: "Display table"
+kable(
+  df_cs,
+  col.names = c("Farm", "Labour (workers)", "Output (tonnes)"),
+  align = "ccc",
+  caption = "Table 1 — Cross-sectional snapshot (Year 2)"
+)
+```
+
+```{r cross-section-plot}
+#| code-fold: true
+#| code-summary: "Plot cross-sectional relationship"
+#| fig-cap: "Figure 1 — Pooled OLS fit across farms (cross-section)"
+#| fig-height: 4
+
+ols_cs <- lm(Output ~ Labour, data = df_cs)
+beta_cs <- round(coef(ols_cs)["Labour"], 2)
+
+ggplot(df_cs, aes(x = Labour, y = Output, colour = Farm, label = Farm)) +
+  geom_smooth(aes(group = 1), method = "lm", se = TRUE,
+              colour = "grey40", fill = "grey85", linewidth = 0.8) +
+  geom_point(size = 5) +
+  geom_text(nudge_y = 1.8, fontface = "bold", size = 4.5) +
+  scale_colour_brewer(palette = "Set2") +
+  annotate("text", x = 8, y = 68,
+           label = paste0("OLS slope = ", beta_cs, " tonnes / worker"),
+           colour = "grey30", size = 4, hjust = 0) +
+  labs(x = "Labour (workers)", y = "Output (tonnes)",
+       title = "Cross-sectional relationship: Labour → Output") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+::: {.callout-tip collapse="true"}
+### Discussion — What relationship do you see?
+
+-   The slope is **strongly positive**: roughly `r beta_cs` extra tonnes per additional worker.
+-   A naïve reading suggests labour is highly productive.
+-   **Policy temptation:** subsidise hiring to boost output.
+
+**But wait — should we trust this number?**
+:::
+
+------------------------------------------------------------------------
+
+## Step 3 — Introducing Doubt
+
+::: callout-caution
+### Think before you answer
+
+> "Are all farms equally good, independent of how many workers they hire?"
+
+Take 30 seconds to discuss with your neighbour. What might be driving the pattern in Figure 1?
+:::
+
+```{r reveal-quality}
+#| code-fold: true
+#| code-summary: "Reveal: unobserved soil quality"
+
+df_cs_full <- df_cs |>
+  mutate(Quality = quality,
+         Quality_label = c("Very high", "High", "Medium", "Low", "Very low"))
+
+kable(
+  df_cs_full |> select(Farm, Labour, Quality_label, Output),
+  col.names = c("Farm", "Labour (workers)", "Soil Quality (hidden!)", "Output (tonnes)"),
+  align = "cccc",
+  caption = "Table 2 — The hidden variable revealed"
+)
+```
+
+```{r confounding-plot}
+#| code-fold: true
+#| code-summary: "Plot confounding structure"
+#| fig-cap: "Figure 2 — Labour is correlated with unobserved soil quality"
+#| fig-height: 4
+
+ggplot(df_cs_full, aes(x = Labour, y = Output, colour = Quality_label, label = Farm)) +
+  geom_point(aes(size = Quality), alpha = 0.85) +
+  geom_text(nudge_y = 1.8, fontface = "bold", size = 4.5, colour = "grey20") +
+  scale_colour_brewer(palette = "YlOrRd", direction = -1,
+                      name = "Soil quality") +
+  scale_size_continuous(range = c(5, 12), guide = "none") +
+  labs(x = "Labour (workers)", y = "Output (tonnes)",
+       title = "Larger dots = better soil quality",
+       subtitle = "Better farms hire more workers AND produce more — a recipe for bias") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "right")
+```
+
+::: {.callout-warning collapse="true"}
+### Reveal — The omitted variable bias
+
+The OLS estimate of **`r beta_cs`** tonnes per worker is **upward biased** because:
+
+$$y_{it} = \alpha + \beta_{\text{OLS}}\, x_{it} + \varepsilon_{it}$$
+
+…but the true model is:
+
+$$y_{it} = \alpha_i + \beta_{\text{true}}\, x_{it} + u_{it}$$
+
+where $\alpha_i$ = soil quality (unobserved). Since better farms hire more workers, $\text{Cov}(x_{it},\, \alpha_i) > 0$, so $\hat\beta_{\text{OLS}} > \beta_{\text{true}}$.
+:::
+
+------------------------------------------------------------------------
+
+## Step 4 — The Panel Data Reveal
+
+Now we track the **same farms over two years**. Each farm changed its workforce between years.
+
+```{r panel-data}
+#| code-fold: true
+#| code-summary: "Generate panel data (5 farms × 2 years)"
+
+set.seed(42)
+
+# Labour levels in year 1 and year 2 (within-farm changes are small)
+labour_y1 <- c(6, 5, 4, 3, 1)
+labour_y2 <- labour_cs          # same as cross-section year 2
+
+output_y1 <- quality + true_beta * labour_y1 + rnorm(5, 0, 1)
+output_y1 <- round(output_y1)
+
+df_panel <- tibble(
+  Farm   = rep(farms, 2),
+  Year   = rep(c("Year 1", "Year 2"), each = 5),
+  Labour = c(labour_y1, labour_y2),
+  Output = c(output_y1, output_cs)
+)
+
+# Wide format for within-farm differences
+df_wide <- df_panel |>
+  pivot_wider(names_from = Year, values_from = c(Labour, Output)) |>
+  mutate(
+    Delta_Labour = `Labour_Year 2` - `Labour_Year 1`,
+    Delta_Output = `Output_Year 2` - `Output_Year 1`,
+    Within_beta  = round(Delta_Output / Delta_Labour, 2)
+  )
+```
+
+```{r panel-table}
+#| code-fold: true
+#| code-summary: "Display panel table"
+kable(
+  df_panel |> arrange(Farm, Year),
+  col.names = c("Farm", "Year", "Labour (workers)", "Output (tonnes)"),
+  align = "cccc",
+  caption = "Table 3 — Panel data: same farms observed over two years"
+)
+```
+
+```{r panel-plot}
+#| code-fold: true
+#| code-summary: "Plot within-farm trends"
+#| fig-cap: "Figure 3 — Within-farm changes: each line is one farm over time"
+#| fig-height: 4.5
+
+ggplot(df_panel, aes(x = Labour, y = Output,
+                     colour = Farm, group = Farm, label = Farm)) +
+  geom_line(linewidth = 1.2, alpha = 0.8) +
+  geom_point(aes(shape = Year), size = 4) +
+  geom_text(data = df_panel |> filter(Year == "Year 2"),
+            nudge_x = 0.2, nudge_y = 0.8,
+            fontface = "bold", size = 4) +
+  scale_colour_brewer(palette = "Set2") +
+  scale_shape_manual(values = c("Year 1" = 16, "Year 2" = 17)) +
+  labs(x = "Labour (workers)", y = "Output (tonnes)",
+       title = "Within-farm variation: each line connects a farm's two observations",
+       colour = "Farm", shape = "Period") +
+  theme_minimal(base_size = 13)
+```
+
+```{r within-differences}
+#| code-fold: true
+#| code-summary: "Within-farm differences table"
+kable(
+  df_wide |>
+    select(Farm,
+           "Labour (Y1)" = `Labour_Year 1`,
+           "Labour (Y2)" = `Labour_Year 2`,
+           "Output (Y1)" = `Output_Year 1`,
+           "Output (Y2)" = `Output_Year 2`,
+           "ΔLabour" = Delta_Labour,
+           "ΔOutput" = Delta_Output,
+           "ΔOutput/ΔLabour" = Within_beta),
+  align = "cccccccc",
+  caption = "Table 4 — Within-farm changes between Year 1 and Year 2"
+)
+```
+
+::: {.callout-tip collapse="true"}
+### Discussion — What changed?
+
+Compare the **within-farm slope** (Table 4) to the **cross-sectional OLS slope** from Figure 1.
+
+-   The within-farm estimates are **much smaller** — close to the true $\beta = 2.5$.
+-   The cross-sectional estimate of **`r beta_cs`** was inflated because better farms (high $\alpha_i$) also hire more workers.
+-   When we look *within* a farm across time, $\alpha_i$ is held constant — quality does not change between Year 1 and Year 2 for the same farm.
+
+> "The farm does not change its soil between years. Only its labour does."
+:::
+
+------------------------------------------------------------------------
+
+## Step 5 — The Insight: Mundlak (1961)
+
+> *What you just discovered is exactly the problem identified by Yair Mundlak in 1961."*
+
+Map the story onto the formal model:
+
+| Story element        | Notation   |
+|----------------------|------------|
+| Farm output          | $y_{it}$   |
+| Labour input         | $x_{it}$   |
+| Soil quality / skill | $\alpha_i$ |
+| Year                 | $t$        |
+| Farm                 | $i$        |
+
+**The key message:**
+
+> *"We were confusing differences **between farms** with changes **within farms**."*
+
+Between-farm variation is contaminated by $\alpha_i$. Within-farm variation over time is not — because the farm's soil quality is the same in both years.
+
+------------------------------------------------------------------------
+
+## Step 6 — From Intuition to Fixed Effects
+
+```{r regression-comparison}
+#| code-fold: true
+#| code-summary: "Run and compare OLS vs FE"
+
+# Pooled OLS (ignores farm identity)
+mod_ols <- lm(Output ~ Labour, data = df_panel)
+
+# Fixed effects (within estimator via plm)
+pdata   <- pdata.frame(df_panel, index = c("Farm", "Year"))
+mod_fe  <- plm(Output ~ Labour, data = pdata, model = "within")
+
+beta_ols <- round(coef(mod_ols)["Labour"], 3)
+beta_fe  <- round(coef(mod_fe)["Labour"], 3)
+```
+
+```{r comparison-table}
+#| code-fold: true
+#| code-summary: "Display regression comparison"
+tibble(
+  Estimator   = c("Pooled OLS", "Fixed Effects (within)"),
+  `β̂ (Labour)` = c(beta_ols, beta_fe),
+  `True β`    = c(true_beta, true_beta),
+  Bias        = c(round(beta_ols - true_beta, 3),
+                  round(beta_fe  - true_beta, 3)),
+  `Variation used` = c("Between + within farms", "Within farms only")
+) |>
+  kable(align = "lcccc",
+        caption = "Table 5 — Pooled OLS vs Fixed Effects")
+```
+
+```{r final-plot}
+#| code-fold: true
+#| code-summary: "Plot both regression fits"
+#| fig-cap: "Figure 4 — OLS vs within-farm (FE) estimates on the panel data"
+#| fig-height: 4.5
+
+# Fitted values from FE (add farm means back in for plotting)
+df_panel <- df_panel |>
+  group_by(Farm) |>
+  mutate(
+    Labour_dm = Labour - mean(Labour),
+    Output_dm = Output - mean(Output),
+    Farm_mean_Labour = mean(Labour),
+    Farm_mean_Output = mean(Output)
+  ) |>
+  ungroup()
+
+ggplot(df_panel, aes(x = Labour, y = Output, colour = Farm, group = Farm)) +
+  # Farm-level parallel FE lines
+  geom_line(aes(y = Farm_mean_Output + beta_fe * (Labour - Farm_mean_Labour)),
+            linewidth = 1, linetype = "dashed", alpha = 0.7) +
+  # Observed points
+  geom_point(aes(shape = Year), size = 4) +
+  # Pooled OLS line
+  geom_abline(intercept = coef(mod_ols)[1], slope = coef(mod_ols)[2],
+              colour = "black", linewidth = 1.1, linetype = "solid") +
+  scale_colour_brewer(palette = "Set2") +
+  scale_shape_manual(values = c("Year 1" = 16, "Year 2" = 17)) +
+  annotate("text", x = 9, y = 76,
+           label = paste0("Pooled OLS: β̂ = ", beta_ols),
+           colour = "black", fontface = "bold", size = 3.8) +
+  annotate("text", x = 9, y = 72,
+           label = paste0("Fixed Effects: β̂ = ", beta_fe,
+                          " (true β = ", true_beta, ")"),
+           colour = "grey30", fontface = "italic", size = 3.8) +
+  labs(x = "Labour (workers)", y = "Output (tonnes)",
+       title = "Solid line = Pooled OLS  |  Dashed lines = Farm-level FE fits",
+       colour = "Farm", shape = "Period") +
+  theme_minimal(base_size = 13)
+```
+
+::: {.callout-note}
+### Reading the plot
+
+The **solid black line** is the pooled OLS regression line fitted on all 10 observations (5 farms × 2 years) combined, as if they were independent cross-sectional data points. It ignores farm identity entirely — every observation is treated as a separate, unrelated data point. The slope is therefore driven by **both** between-farm and within-farm variation mixed together. Because high-quality farms have both more labour and more output, the between-farm signal dominates and inflates the slope upward.
+
+The **dashed coloured lines**, by contrast, are the farm-level FE fits — parallel lines with the within slope ($\hat\beta_{\text{FE}}$), one per farm, each anchored to that farm's own mean. They use only within-farm variation over time, which is why their slope is much flatter and closer to the true $\beta$.
+
+The contrast between the steep black line and the shallow dashed lines is the visual payoff of the whole exercise: **same data, very different estimates** — because of what variation each estimator uses.
+:::
+
+::: {.callout-important collapse="true"}
+### Policy question — What mistake would we make?
+
+**If we used the cross-sectional (OLS) estimate of `r beta_ols` tonnes per worker:**
+
+-   We would **over-subsidise labour** — expecting large output gains from hiring.
+-   We would **misattribute productivity** to labour inputs, when it is really driven by underlying farm quality ($\alpha_i$).
+-   The government would transfer resources to farms expecting gains that will not materialise.
+
+**The fixed effects estimate of `r beta_fe` tonnes per worker** — much closer to the true $\beta = `r true_beta`$ — gives the correct policy signal: labour has a real but **much more modest** effect on output.
+
+> *"Fixed effects models do exactly what you just did informally: they hold each unit constant and look only at within-unit variation over time."*
+:::
+
+

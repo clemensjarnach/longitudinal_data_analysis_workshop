@@ -1,78 +1,47 @@
+# Quarto
 /.quarto/
+/_freeze/
+.cache/
+.qmd-cache/
 **/*.quarto_ipynb
-.Rproj.user
 
 # R
 .Rhistory
 .RData
 .Rproj.user
 .Ruserdata
-.Rproj*
 .Renv
 .Rprofile
+.Rproj
 
+# renv (library managed by renv/.gitignore)
+# renv/activate.R, renv/settings.json, and renv.lock are intentionally tracked
 
+# Slides build artefacts (LaTeX and Quarto render outputs)
+slides/*.aux
+slides/*.fdb_latexmk
+slides/*.fls
+slides/*.log
+slides/*.nav
+slides/*.out
+slides/*.snm
+slides/*.tex
+slides/*.toc
+slides/*.html
+slides/*_files/
 
 # System files
 .DS_Store
 Thumbs.db
 
-# Large files
-# Shapefiles and geographic data
-data/*.shp
-data/*.shx
-data/*.dbf
-data/*.prj
-data/*.cpg
-data/*.xml
-data/*.sbn
-data/*.sbx
-
-# Large raw data folders
-
-
-# Keep processed data (explicitly allow)
-!data/processed/
-!data/processed/*.rds
-
-
-# Python / Jupyter (if used in Quarto)
-__pycache__/
-.ipynb_checkpoints/
-
-# Quarto cache and render artefacts
-#*_files/
-.cache/
-.qmd-cache/
-
-# Project-specific archive directory
+# Project-specific directories
 _archive/
-/.quarto/
-/solutions/
-/_freeze/
-
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.pyo
-*.pyd
-.Python
-.venv/
-venv/
-env/
-.env
-*.egg-info/
-dist/
-build/
-.ipynb_checkpoints/
-*.ipynb_checkpoints
-
-# Assets and Claude files
 _assets/
 .claude/
 
-# Text files starting with underscore
+# Draft and scratch files
 _*.txt
 _*.md
+
+# Claude Code instructions (may contain sensitive context)
+CLAUDE.md
