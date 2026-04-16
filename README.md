@@ -2,6 +2,8 @@
 
 A practical introduction to longitudinal and panel data analysis, from foundational theory to applied modelling in R. Developed for the [Grand Union DTP](https://www.granduniondtp.ac.uk) workshop at the University of Oxford, taught by [Dr Clemens Jarnach](https://clemensjarnach.github.io).
 
+The workshop e-book is available at: [clemensjarnach.github.io/longitudinal_data_analysis_with_R_workshop](https://clemensjarnach.github.io/longitudinal_data_analysis_workshop/)
+
 ---
 
 ## Repository Structure
