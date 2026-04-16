@@ -1,8 +1,21 @@
----
-nocite: '@*'
----
-
 # References {.unnumbered}
 
-::: {#refs}
-:::
+Angrist, J. D., & Pischke, J.-S. (2008). *Mostly harmless econometrics: An empiricist's companion*. Princeton University Press.
+
+Croissant, Y., & Millo, G. (2018). *Panel data econometrics with R* (1st ed.). Wiley.
+
+Fieldhouse, E., Green, J., Evans, G., Mellon, J., Prosser, C., Bailey, R., deGeus, R., Schmitt, H., & van der Eijk, C. (2023). *British Election Study 2014–2023 Internet Panel Waves 1–21* [Data series]. UK Data Service.
+
+Firebaugh, G. (2008). *Seven rules for social research*. Princeton University Press. <https://doi.org/10.1515/9780691190433>
+
+Fletcher, R., Andı, S., Badrinathan, S., Eddy, K. A., Kalogeropoulos, A., Mont'Alverne, C., Robertson, C. T., Ross Arguedas, A., Schulz, A., Toff, B., & Nielsen, R. K. (2024). The link between changing news use and trust: Longitudinal analysis of 46 countries. *Journal of Communication*, jqae044. <https://doi.org/10.1093/joc/jqae044>
+
+Hsiao, C. (2014). *Analysis of panel data* (3rd ed.). Cambridge University Press.
+
+Huntington-Klein, N. (2025). *The effect: An introduction to research design and causality* (2nd ed.). CRC Press.
+
+Kearney, M. (2017). Cross-lagged panel analysis. In M. Allen (Ed.), *The SAGE encyclopedia of communication research methods* (Vol. 4). SAGE Publications.
+
+Singer, J. D., & Willett, J. B. (2003). *Applied longitudinal data analysis: Modeling change and event occurrence*. Oxford University Press.
+
+Wooldridge, J. M. (2014). *Introduction to econometrics* (Europe, Middle East & Africa ed.). Cengage Learning.

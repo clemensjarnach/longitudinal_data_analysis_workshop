@@ -764,7 +764,7 @@
     "href": "how_to_cite.html",
     "title": "How to Cite",
     "section": "",
-    "text": "You can cite this tutorial book as:\n_Jarnach, Clemens. 2026. Longitudinal Data Analysis with R: A Practical Introduction from Theory to Code. Oxford. https://github.com/clemensjarnach",
+    "text": "You can cite this tutorial book as:\nJarnach, Clemens. 2026. Longitudinal Data Analysis with R: A Practical Introduction from Theory to Code. Oxford. https://github.com/clemensjarnach",
     "crumbs": [
       "How to Cite"
     ]
@@ -774,7 +774,7 @@
     "href": "references.html",
     "title": "References",
     "section": "",
-    "text": "Firebaugh, Glenn. 2008. Seven Rules for Social\nResearch. Princeton University Press. https://doi.org/10.1515/9780691190433.\n\n\nHuntington-Klein, Nick. 2025. The Effect : An Introduction to\nResearch Design and Causality. Second edition. Boca Raton, FL ; CRC\nPress.\n\n\nWooldridge, Jeffrey M. 2014. Introduction to Econometrics.\nEurope, Middle East and Africa edition. Andover.",
+    "text": "Angrist, J. D., & Pischke, J.-S. (2008). Mostly harmless econometrics: An empiricist’s companion. Princeton University Press.\nCroissant, Y., & Millo, G. (2018). Panel data econometrics with R (1st ed.). Wiley.\nFieldhouse, E., Green, J., Evans, G., Mellon, J., Prosser, C., Bailey, R., deGeus, R., Schmitt, H., & van der Eijk, C. (2023). British Election Study 2014–2023 Internet Panel Waves 1–21 [Data series]. UK Data Service.\nFirebaugh, G. (2008). Seven rules for social research. Princeton University Press. https://doi.org/10.1515/9780691190433\nFletcher, R., Andı, S., Badrinathan, S., Eddy, K. A., Kalogeropoulos, A., Mont’Alverne, C., Robertson, C. T., Ross Arguedas, A., Schulz, A., Toff, B., & Nielsen, R. K. (2024). The link between changing news use and trust: Longitudinal analysis of 46 countries. Journal of Communication, jqae044. https://doi.org/10.1093/joc/jqae044\nHsiao, C. (2014). Analysis of panel data (3rd ed.). Cambridge University Press.\nHuntington-Klein, N. (2025). The effect: An introduction to research design and causality (2nd ed.). CRC Press.\nKearney, M. (2017). Cross-lagged panel analysis. In M. Allen (Ed.), The SAGE encyclopedia of communication research methods (Vol. 4). SAGE Publications.\nSinger, J. D., & Willett, J. B. (2003). Applied longitudinal data analysis: Modeling change and event occurrence. Oxford University Press.\nWooldridge, J. M. (2014). Introduction to econometrics (Europe, Middle East & Africa ed.). Cengage Learning.",
     "crumbs": [
       "References"
     ]
