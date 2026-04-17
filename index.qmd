@@ -17,9 +17,7 @@ The gold standard for establishing causation is the randomised controlled trial 
 
 Panel data offer a pragmatic middle ground. Rather than comparing different units at a single point in time, we compare the *same unit to itself* across time: a unit before and after some change, in other words "comparing like with like" [@firebaughSevenRulesSocial2008]. Stable, unobserved characteristics — the factors that would otherwise confound our estimates — drop out of the analysis, because they are constant within each unit. This is not as secure as an RCT, but it is far more feasible for most social science research questions and substantially more credible than naive cross-sectional comparisons.
 
-![](fig/NHK_Control.gif){width=48%} ![](fig/NHK_FE.gif){width=48%}
-
-Illustration by @huntington-kleinEffectIntroductionResearch2025: Introducing a binary control variable (left) and introducing fixed effects (right)
+![The same simulated dataset of four groups (colours) fitted by four different models. By the end of this workshop you will be able to understand, estimate, and critically compare these approaches.](fig/panel_models_animated.gif){fig-alt="Animation cycling through Pooled OLS, Fixed Effects, Random Effects, and Mixed Effects regression lines fitted to the same simulated panel dataset with four groups."}
 
 This workshop equips you with the conceptual tools and R skills to work with panel data: to move from describing patterns to making defensible causal claims — or at least to being honest about when you cannot.
 

@@ -1,6 +1,20 @@
 
 # Appendix   {.unnumbered}
 
+## Panel Model Comparison
+
+The figure below illustrates four regression strategies for panel data, all fitted to the same simulated dataset of four groups (shown in different colours). The models differ substantially in how they account for group structure, and consequently in how well they recover the underlying within-group relationship.
+
+![Regression models for grouped/panel data. Each panel uses the same simulated dataset of four groups (colours). Pooled OLS ignores group structure and recovers a badly biased slope; Fixed Effects removes the confound by demeaning within groups; Random Effects partially pools information across groups; Mixed Effects allows both intercepts and slopes to vary by group.](fig/panel_models.png){fig-alt="Four scatter plots comparing Pooled OLS, Fixed Effects, Random Effects, and Mixed Effects regression models on simulated panel data with four groups."}
+
+**Pooled OLS** treats all observations as if they came from a single population, ignoring group membership entirely. When groups differ systematically in both the outcome and the predictor, the resulting slope is confounded and can be severely biased — a classic manifestation of Simpson's Paradox.
+
+**Fixed Effects (FE)** addresses this by demeaning within each group (or equivalently, including a group-level intercept for every unit). This removes all time-invariant unobserved heterogeneity, so only within-group variation identifies the slope. It is the primary method covered in this workshop.
+
+**Random Effects (RE)** assumes that group-level deviations are drawn from a common distribution and are uncorrelated with the predictors. This is a stronger assumption than FE, but it allows time-invariant predictors to be included and can be more efficient when the assumption holds. The Hausman test is the standard tool for choosing between FE and RE.
+
+**Mixed Effects (ME)** — also called multilevel or hierarchical models — goes one step further by allowing both intercepts *and* slopes to vary across groups. This is a rich and flexible framework that sits beyond the scope of this introductory workshop.
+
 ## Presentation Slides
 
 Below are the slides for this module. You can view them in full screen [here](slides/panel_data_fundamentals_slides.pdf).

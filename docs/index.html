@@ -321,8 +321,12 @@ div.csl-indent {
 <p>Much of empirical social science is driven by causal questions: we want to know not just whether two things are related, but whether one actually brings about the other. Using purely cross-sectional data, we can compare different units — people, firms, countries — and test whether they differ according to some treatment or variable of interest. But this approach has a well-known limitation: those units may differ in many other respects, and we are unlikely to observe all of them. The result is that we may mistake confounded correlation for causation.</p>
 <p>The gold standard for establishing causation is the randomised controlled trial (RCT). By randomly assigning some units to treatment, we ensure that no unobserved characteristics can be systematically correlated with who receives it — treatment and control groups are, on average, identical in all respects except the intervention itself. However, random assignment is often ethically or practically impossible in the social sciences. Consider studying the effects of education, marriage, or childbirth — the ethics committee will not be sympathetic.</p>
 <p>Panel data offer a pragmatic middle ground. Rather than comparing different units at a single point in time, we compare the <em>same unit to itself</em> across time: a unit before and after some change, in other words “comparing like with like” <span class="citation" data-cites="firebaughSevenRulesSocial2008">(<a href="#ref-firebaughSevenRulesSocial2008" role="doc-biblioref">Firebaugh 2008</a>)</span>. Stable, unobserved characteristics — the factors that would otherwise confound our estimates — drop out of the analysis, because they are constant within each unit. This is not as secure as an RCT, but it is far more feasible for most social science research questions and substantially more credible than naive cross-sectional comparisons.</p>
-<p><img src="fig/NHK_Control.gif" class="img-fluid" style="width:48.0%"> <img src="fig/NHK_FE.gif" class="img-fluid" style="width:48.0%"></p>
-<p>Illustration by <span class="citation" data-cites="huntington-kleinEffectIntroductionResearch2025">Huntington-Klein (<a href="#ref-huntington-kleinEffectIntroductionResearch2025" role="doc-biblioref">2025</a>)</span>: Introducing a binary control variable (left) and introducing fixed effects (right)</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="fig/panel_models_animated.gif" class="img-fluid figure-img" alt="Animation cycling through Pooled OLS, Fixed Effects, Random Effects, and Mixed Effects regression lines fitted to the same simulated panel dataset with four groups."></p>
+<figcaption>The same simulated dataset of four groups (colours) fitted by four different models. By the end of this workshop you will be able to understand, estimate, and critically compare these approaches.</figcaption>
+</figure>
+</div>
 <p>This workshop equips you with the conceptual tools and R skills to work with panel data: to move from describing patterns to making defensible causal claims — or at least to being honest about when you cannot.</p>
 </section>
 <section id="objectives" class="level2 unnumbered">
@@ -394,9 +398,6 @@ div.csl-indent {
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
 <div id="ref-firebaughSevenRulesSocial2008" class="csl-entry" role="listitem">
 Firebaugh, Glenn. 2008. <em>Seven <span>Rules</span> for <span>Social Research</span></em>. Princeton University Press. <a href="https://doi.org/10.1515/9780691190433">https://doi.org/10.1515/9780691190433</a>.
-</div>
-<div id="ref-huntington-kleinEffectIntroductionResearch2025" class="csl-entry" role="listitem">
-Huntington-Klein, Nick. 2025. <em>The Effect : An Introduction to Research Design and Causality</em>. Second edition. Boca Raton, FL ; CRC Press.
 </div>
 </div>
 </section>
@@ -882,85 +883,83 @@ Huntington-Klein, Nick. 2025. <em>The Effect : An Introduction to Research Desig
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>Panel data offer a pragmatic middle ground. Rather than comparing different units at a single point in time, we compare the *same unit to itself* across time: a unit before and after some change, in other words "comparing like with like" <span class="co">[</span><span class="ot">@firebaughSevenRulesSocial2008</span><span class="co">]</span>. Stable, unobserved characteristics — the factors that would otherwise confound our estimates — drop out of the analysis, because they are constant within each unit. This is not as secure as an RCT, but it is far more feasible for most social science research questions and substantially more credible than naive cross-sectional comparisons.</span>
 <span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="al">![](fig/NHK_Control.gif)</span>{width=48%} <span class="al">![](fig/NHK_FE.gif)</span>{width=48%}</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="al">![The same simulated dataset of four groups (colours) fitted by four different models. By the end of this workshop you will be able to understand, estimate, and critically compare these approaches.](fig/panel_models_animated.gif)</span>{fig-alt="Animation cycling through Pooled OLS, Fixed Effects, Random Effects, and Mixed Effects regression lines fitted to the same simulated panel dataset with four groups."}</span>
 <span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>Illustration by @huntington-kleinEffectIntroductionResearch2025: Introducing a binary control variable (left) and introducing fixed effects (right)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>This workshop equips you with the conceptual tools and R skills to work with panel data: to move from describing patterns to making defensible causal claims — or at least to being honest about when you cannot.</span>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>This workshop equips you with the conceptual tools and R skills to work with panel data: to move from describing patterns to making defensible causal claims — or at least to being honest about when you cannot.</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="fu">## Objectives {.unnumbered}</span></span>
 <span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Objectives {.unnumbered}</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>This workshop introduces the core concepts and methods of longitudinal and panel data analysis using R, equipping participants with the conceptual foundations and practical skills needed to model change over time, address unobserved heterogeneity, and interpret results in a social-scientific context.</span>
 <span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>This workshop introduces the core concepts and methods of longitudinal and panel data analysis using R, equipping participants with the conceptual foundations and practical skills needed to model change over time, address unobserved heterogeneity, and interpret results in a social-scientific context.</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="fu">## Syllabus {.unnumbered}</span></span>
 <span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="fu">## Syllabus {.unnumbered}</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Panel data fundamentals: structure, advantages, common sources, and typical challenges. </span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Introduction to longitudinal modelling: unobserved heterogeneity, within–between variation, and time-varying vs time-invariant predictors.</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Fixed Effects models: assumptions, estimation, interpretation, and extensions.</span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Random Effects models: assumptions, estimation, interpretation, and comparisons with FE.</span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Exploring longitudinal data in R</span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Preparing longitudinal data in R: data reshaping, cleaning, indexing, and handling missingness.</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Model selection and diagnostics: Hausman test, goodness-of-fit considerations, and robustness checks.</span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Applied case studies</span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Panel data fundamentals: structure, advantages, common sources, and typical challenges. </span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Introduction to longitudinal modelling: unobserved heterogeneity, within–between variation, and time-varying vs time-invariant predictors.</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Fixed Effects models: assumptions, estimation, interpretation, and extensions.</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Random Effects models: assumptions, estimation, interpretation, and comparisons with FE.</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Exploring longitudinal data in R</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Preparing longitudinal data in R: data reshaping, cleaning, indexing, and handling missingness.</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Model selection and diagnostics: Hausman test, goodness-of-fit considerations, and robustness checks.</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Applied case studies</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why use R? {.unnumbered}</span></span>
 <span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why use R? {.unnumbered}</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>Throughout this workshop we use **R**, which has become one of the richest environments for longitudinal and panel data analysis. The core packages (e.g., <span class="in">`plm`</span>, <span class="in">`fixest`</span>, <span class="in">`lme4`</span>) support the full analytical pipeline: data import and reshaping, model estimation, post-estimation diagnostics, and publication-quality output. R's broader ecosystem (e.g. <span class="in">`tidyverse`</span>) also makes it straightforward to integrate data preparation and visualisation into your analysis workflow.</span>
 <span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>Throughout this workshop we use **R**, which has become one of the richest environments for longitudinal and panel data analysis. The core packages (e.g., <span class="in">`plm`</span>, <span class="in">`fixest`</span>, <span class="in">`lme4`</span>) support the full analytical pipeline: data import and reshaping, model estimation, post-estimation diagnostics, and publication-quality output. R's broader ecosystem (e.g. <span class="in">`tidyverse`</span>) also makes it straightforward to integrate data preparation and visualisation into your analysis workflow.</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>All workshop code, data, and exercises use R. If you have not yet installed the required packages, please do so:</span>
 <span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>All workshop code, data, and exercises use R. If you have not yet installed the required packages, please do so:</span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="in">``` r</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>  <span class="st">"RColorBrewer"</span>, <span class="st">"fixest"</span>, <span class="st">"forcats"</span>, <span class="st">"haven"</span>, <span class="st">"janitor"</span>, <span class="st">"lme4"</span>,</span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>  <span class="st">"lubridate"</span>, <span class="st">"plm"</span>, <span class="st">"readxl"</span>, <span class="st">"srvyr"</span>, <span class="st">"stargazer"</span>, <span class="st">"tidyverse"</span>, <span class="st">"viridis"</span></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="in">``` r</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>  <span class="st">"RColorBrewer"</span>, <span class="st">"fixest"</span>, <span class="st">"forcats"</span>, <span class="st">"haven"</span>, <span class="st">"janitor"</span>, <span class="st">"lme4"</span>,</span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>  <span class="st">"lubridate"</span>, <span class="st">"plm"</span>, <span class="st">"readxl"</span>, <span class="st">"srvyr"</span>, <span class="st">"stargazer"</span>, <span class="st">"tidyverse"</span>, <span class="st">"viridis"</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="fu">## Key R Packages {.unnumbered}</span></span>
 <span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="fu">## Key R Packages {.unnumbered}</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>R has a rich ecosystem for longitudinal and panel data analysis, spanning data import, reshaping, model estimation, diagnostics, and visualisation. The core packages for this workshop are:</span>
 <span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>R has a rich ecosystem for longitudinal and panel data analysis, spanning data import, reshaping, model estimation, diagnostics, and visualisation. The core packages for this workshop are:</span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Panel model estimation:** <span class="co">[</span><span class="ot">plm</span><span class="co">](https://cran.r-project.org/web/packages/plm/index.html)</span> — the standard package for fixed effects, random effects, and pooled OLS on panel data; includes the Hausman test and a wide range of diagnostics</span>
 <span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Panel model estimation:** <span class="co">[</span><span class="ot">plm</span><span class="co">](https://cran.r-project.org/web/packages/plm/index.html)</span> — the standard package for fixed effects, random effects, and pooled OLS on panel data; includes the Hausman test and a wide range of diagnostics</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Fast fixed effects:** <span class="co">[</span><span class="ot">fixest</span><span class="co">](https://cran.r-project.org/web/packages/fixest/index.html)</span> — high-performance estimation of models with multiple high-dimensional fixed effects; syntax is concise and output integrates well with <span class="in">`stargazer`</span> and <span class="in">`modelsummary`</span></span>
 <span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Fast fixed effects:** <span class="co">[</span><span class="ot">fixest</span><span class="co">](https://cran.r-project.org/web/packages/fixest/index.html)</span> — high-performance estimation of models with multiple high-dimensional fixed effects; syntax is concise and output integrates well with <span class="in">`stargazer`</span> and <span class="in">`modelsummary`</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Mixed effects / multilevel models:** <span class="co">[</span><span class="ot">lme4</span><span class="co">](https://cran.r-project.org/web/packages/lme4/index.html)</span> — fits linear and generalised linear mixed models, useful when random effects structure is substantively motivated</span>
 <span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Mixed effects / multilevel models:** <span class="co">[</span><span class="ot">lme4</span><span class="co">](https://cran.r-project.org/web/packages/lme4/index.html)</span> — fits linear and generalised linear mixed models, useful when random effects structure is substantively motivated</span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Regression tables:** <span class="co">[</span><span class="ot">stargazer</span><span class="co">](https://cran.r-project.org/web/packages/stargazer/index.html)</span> — produces publication-ready LaTeX and HTML tables from model objects</span>
 <span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Regression tables:** <span class="co">[</span><span class="ot">stargazer</span><span class="co">](https://cran.r-project.org/web/packages/stargazer/index.html)</span> — produces publication-ready LaTeX and HTML tables from model objects</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Data import:** <span class="co">[</span><span class="ot">haven</span><span class="co">](https://cran.r-project.org/web/packages/haven/index.html)</span> and <span class="co">[</span><span class="ot">readxl</span><span class="co">](https://cran.r-project.org/web/packages/readxl/index.html)</span> — read Stata (<span class="in">`.dta`</span>), SPSS (<span class="in">`.sav`</span>), and Excel files directly into R</span>
 <span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Data import:** <span class="co">[</span><span class="ot">haven</span><span class="co">](https://cran.r-project.org/web/packages/haven/index.html)</span> and <span class="co">[</span><span class="ot">readxl</span><span class="co">](https://cran.r-project.org/web/packages/readxl/index.html)</span> — read Stata (<span class="in">`.dta`</span>), SPSS (<span class="in">`.sav`</span>), and Excel files directly into R</span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Data wrangling:** <span class="co">[</span><span class="ot">tidyverse</span><span class="co">](https://cran.r-project.org/web/packages/tidyverse/index.html)</span> and <span class="co">[</span><span class="ot">janitor</span><span class="co">](https://cran.r-project.org/web/packages/janitor/index.html)</span> — reshaping between wide and long format, cleaning variable names, and handling missing data</span>
 <span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Data wrangling:** <span class="co">[</span><span class="ot">tidyverse</span><span class="co">](https://cran.r-project.org/web/packages/tidyverse/index.html)</span> and <span class="co">[</span><span class="ot">janitor</span><span class="co">](https://cran.r-project.org/web/packages/janitor/index.html)</span> — reshaping between wide and long format, cleaning variable names, and handling missing data</span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Date and time handling:** <span class="co">[</span><span class="ot">lubridate</span><span class="co">](https://cran.r-project.org/web/packages/lubridate/index.html)</span> — parsing and arithmetic on date/time variables common in longitudinal datasets</span>
 <span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Date and time handling:** <span class="co">[</span><span class="ot">lubridate</span><span class="co">](https://cran.r-project.org/web/packages/lubridate/index.html)</span> — parsing and arithmetic on date/time variables common in longitudinal datasets</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Colour palettes:** <span class="co">[</span><span class="ot">RColorBrewer</span><span class="co">](https://cran.r-project.org/web/packages/RColorBrewer/index.html)</span> and <span class="co">[</span><span class="ot">viridis</span><span class="co">](https://cran.r-project.org/web/packages/viridis/index.html)</span> — perceptually uniform and accessible colour scales for visualisation</span>
 <span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>**Colour palettes:** <span class="co">[</span><span class="ot">RColorBrewer</span><span class="co">](https://cran.r-project.org/web/packages/RColorBrewer/index.html)</span> and <span class="co">[</span><span class="ot">viridis</span><span class="co">](https://cran.r-project.org/web/packages/viridis/index.html)</span> — perceptually uniform and accessible colour scales for visualisation</span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="fu">## Recommended Reading {.unnumbered}</span></span>
 <span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="fu">## Recommended Reading {.unnumbered}</span></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="fu">### Core Textbooks</span></span>
 <span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="fu">### Core Textbooks</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Croissant, Yves, and Giovanni Millo. 2018. Panel Data Econometrics with R. First edition. Hoboken, NJ: Wiley.</span>
 <span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Croissant, Yves, and Giovanni Millo. 2018. Panel Data Econometrics with R. First edition. Hoboken, NJ: Wiley.</span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Angrist, Joshua David, and Jörn-Steffen Pischke. 2008. ‘Mostly Harmless Econometrics : An Empiricist’s Companion’. In Mostly Harmless Econometrics : An Empiricist’s Companion, De gruyter eBooks complete., Princeton, NJ: Princeton University Press.</span>
 <span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Angrist, Joshua David, and Jörn-Steffen Pischke. 2008. ‘Mostly Harmless Econometrics : An Empiricist’s Companion’. In Mostly Harmless Econometrics : An Empiricist’s Companion, De gruyter eBooks complete., Princeton, NJ: Princeton University Press.</span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Singer, Judith D, and John B Willett. 2003. Applied Longitudinal Data Analysis: Modeling Change and Event Occurrence. 1st edn Oxford u.a: Oxford Univ. Pr.</span>
 <span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Singer, Judith D, and John B Willett. 2003. Applied Longitudinal Data Analysis: Modeling Change and Event Occurrence. 1st edn Oxford u.a: Oxford Univ. Pr.</span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Wooldridge, Jeffrey M. 2014. Introduction to Econometrics. Europe, Middle East and Africa edition. Andover.</span>
 <span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Wooldridge, Jeffrey M. 2014. Introduction to Econometrics. Europe, Middle East and Africa edition. Andover.</span>
-<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a><span class="fu">### Online Tutorials and Resources</span></span>
 <span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a><span class="fu">### Online Tutorials and Resources</span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Rüttenauer, Tobias.** *Panel Data Analysis.* <span class="co">[</span><span class="ot">https://ruettenauer.github.io/Panel-Data-Analysis/</span><span class="co">](https://ruettenauer.github.io/Panel-Data-Analysis/ )</span></span>
 <span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Rüttenauer, Tobias.** *Panel Data Analysis.* <span class="co">[</span><span class="ot">https://ruettenauer.github.io/Panel-Data-Analysis/</span><span class="co">](https://ruettenauer.github.io/Panel-Data-Analysis/ )</span></span>
-<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a><span class="fu">## Acknowledgement</span></span>
-<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>This course profited a lot from teaching materials by Tobias Rüttenauer; Jeffrey M.Wooldridge et al., Yves Croissant &amp; Giovanni Millo; and Judith Singer &amp; John Willett. </span>
-<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a><span class="fu">## Acknowledgement</span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a>This course profited a lot from teaching materials by Tobias Rüttenauer; Jeffrey M.Wooldridge et al., Yves Croissant &amp; Giovanni Millo; and Judith Singer &amp; John Willett. </span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

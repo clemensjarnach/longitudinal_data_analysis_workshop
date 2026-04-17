@@ -504,6 +504,12 @@ Adding more observable controls helps, but cannot fully remove the bias if impor
 
 The fixed effects (FE) estimator eliminates $a_i$ by exploiting the fact that it is time-constant. Two algebraically equivalent approaches achieve this.
 
+To build intuition before the algebra, consider the figures below. Introducing a **binary control variable** (left) partitions the data into discrete groups and compares observations *within* each group. **Fixed effects** (right) generalise this idea: rather than a single binary split, every unit gets its own intercept, so all comparisons are made *within units* over time. The identifying variation comes entirely from how each unit changes, not from how units differ from one another.
+
+![](fig/NHK_Control.gif){width=48%} ![](fig/NHK_FE.gif){width=48%}
+
+Illustration by @huntington-kleinEffectIntroductionResearch2025: Introducing a binary control variable (left) and introducing fixed effects (right)
+
 ### 5.1 The Within (De-meaning) Transformation
 
 For each unit $i$, compute the time-mean of every variable:
