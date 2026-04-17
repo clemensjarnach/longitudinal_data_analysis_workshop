@@ -1318,5 +1318,55 @@
     "crumbs": [
       "<span class='chapter-number'>5</span>  <span class='chapter-title'>Fixed or Random — Which Model Fits?</span>"
     ]
+  },
+  {
+    "objectID": "06_summary.html",
+    "href": "06_summary.html",
+    "title": "6  Summary",
+    "section": "",
+    "text": "1. Ordinary Least Squares (OLS)\nThis workshop introduced the core logic and methods of longitudinal data analysis using R. The sections below provide a brief conceptual recap of the three main modelling approaches covered: OLS, Fixed Effects, and Random Effects.\nEquation\n\\[y_{it} = \\beta_0 + \\beta_1 x_{it} + u_{it}\\]\nKey idea\nOLS ignores the panel structure. It treats all observations as independent.\nUnique features\n\\[\\text{Cov}(x_{it}, u_{it}) = 0\\]\nProblem in panel data\nIf there are unobserved individual effects (\\(\\alpha_i\\)) that affect \\(y_{it}\\) and are correlated with \\(x_{it}\\), then: - They get absorbed into \\(u_{it}\\) - → Omitted variable bias",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "06_summary.html#ordinary-least-squares-ols",
+    "href": "06_summary.html#ordinary-least-squares-ols",
+    "title": "6  Summary",
+    "section": "",
+    "text": "\\(i\\) = individual (person, firm, country)\n\\(t\\) = time\n\\(u_{it}\\) = error term\n\n\n\n\n\nOne common intercept \\(\\beta_0\\) for all units\nNo explicit handling of unobserved individual heterogeneity\nAssumes:",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "06_summary.html#fixed-effects-fe",
+    "href": "06_summary.html#fixed-effects-fe",
+    "title": "6  Summary",
+    "section": "2. Fixed Effects (FE)",
+    "text": "2. Fixed Effects (FE)\nEquation\n\\[y_{it} = \\alpha_i + \\beta_1 x_{it} + u_{it}\\]\n\n\\(\\alpha_i\\) = individual-specific intercept (fixed effect)\n\nEquivalent (demeaned / “within” form)\n\\[y_{it} - \\bar{y}_i = \\beta_1 (x_{it} - \\bar{x}_i) + (u_{it} - \\bar{u}_i)\\]\nKey idea\nEach unit gets its own intercept, and these intercepts can be correlated with \\(x_{it}\\).\nUnique features\n\nControls for all time-invariant unobserved heterogeneity\nUses only within-individual variation\nAllows:\n\n\\[\\text{Cov}(x_{it}, \\alpha_i) \\neq 0\\]\nConsequences\n\nCannot estimate coefficients on time-invariant variables\nMore robust than OLS in panel settings",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "06_summary.html#random-effects-re",
+    "href": "06_summary.html#random-effects-re",
+    "title": "6  Summary",
+    "section": "3. Random Effects (RE)",
+    "text": "3. Random Effects (RE)\nEquation\n\\[y_{it} = \\beta_0 + \\beta_1 x_{it} + \\alpha_i + u_{it}\\]\n\n\\(\\alpha_i\\) = random individual effect\n\nError structure (composite error term)\n\\[\\varepsilon_{it} = \\alpha_i + u_{it}\\]\nIndividual-specific effects are captured by this composite error term. Rather than estimating a separate intercept for each unit, RE assumes that individual intercepts are drawn from a random distribution of possible intercepts — meaning \\(\\alpha_i\\) is not a fixed parameter but a random variable with some distribution.\nKey assumption\n\\[\\text{Cov}(x_{it}, \\alpha_i) = 0\\]\nKey idea\nThe individual effect is treated as a random variable, not a fixed parameter.\nUnique features\n\nUses both:\n\nwithin variation (like FE)\nbetween variation (differences across individuals)\n\nEstimated via GLS (Generalized Least Squares)\nImplicitly applies partial pooling\n\nConsequences\n\nCan estimate time-invariant variables\nMore efficient than FE if assumptions hold\nBiased if \\(\\alpha_i\\) is correlated with \\(x_{it}\\)",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "06_summary.html#side-by-side-summary",
+    "href": "06_summary.html#side-by-side-summary",
+    "title": "6  Summary",
+    "section": "Side-by-Side Summary",
+    "text": "Side-by-Side Summary\n\n\n\n\n\n\n\n\n\nFeature\nOLS\nFixed Effects\nRandom Effects\n\n\n\n\nIntercept\nSingle \\(\\beta_0\\)\n\\(\\alpha_i\\) for each unit\n\\(\\beta_0 + \\alpha_i\\)\n\n\nUnobserved heterogeneity\nIgnored\nControlled (fixed)\nModeled (random)\n\n\n\\(\\text{Corr}(x_{it}, \\alpha_i)\\)\nNot allowed\nAllowed\nNot allowed\n\n\nVariation used\nAll (naively)\nWithin only\nWithin + between\n\n\nTime-invariant variables\nYes\nNo\nYes\n\n\nBias risk\nHigh for panel data\nLow\nDepends on assumption",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Summary</span>"
+    ]
   }
 ]

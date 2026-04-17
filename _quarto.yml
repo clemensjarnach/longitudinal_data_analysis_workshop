@@ -18,6 +18,7 @@ book:
     - 03_r_fundamentals.qmd
     - 04_panel_data_in_r.qmd
     - 05_exercise_farm_panel_re.qmd
+    - 06_summary.qmd
     - feedback.qmd
     - how_to_cite.qmd
     - references.qmd

@@ -1,0 +1,113 @@
+# Summary
+
+This workshop introduced the core logic and methods of longitudinal data analysis using R. The sections below provide a brief conceptual recap of the three main modelling approaches covered: OLS, Fixed Effects, and Random Effects.
+
+## 1. Ordinary Least Squares (OLS)
+
+**Equation**
+
+$$y_{it} = \beta_0 + \beta_1 x_{it} + u_{it}$$
+
+- $i$ = individual (person, firm, country)
+- $t$ = time
+- $u_{it}$ = error term
+
+**Key idea**
+
+OLS ignores the panel structure. It treats all observations as independent.
+
+**Unique features**
+
+- One common intercept $\beta_0$ for all units
+- No explicit handling of unobserved individual heterogeneity
+- Assumes:
+
+$$\text{Cov}(x_{it}, u_{it}) = 0$$
+
+**Problem in panel data**
+
+If there are unobserved individual effects ($\alpha_i$) that affect $y_{it}$ and are correlated with $x_{it}$, then:
+- They get absorbed into $u_{it}$
+- → Omitted variable bias
+
+---
+
+## 2. Fixed Effects (FE)
+
+**Equation**
+
+$$y_{it} = \alpha_i + \beta_1 x_{it} + u_{it}$$
+
+- $\alpha_i$ = individual-specific intercept (fixed effect)
+
+**Equivalent (demeaned / "within" form)**
+
+$$y_{it} - \bar{y}_i = \beta_1 (x_{it} - \bar{x}_i) + (u_{it} - \bar{u}_i)$$
+
+**Key idea**
+
+Each unit gets its own intercept, and these intercepts can be correlated with $x_{it}$.
+
+**Unique features**
+
+- Controls for all time-invariant unobserved heterogeneity
+- Uses only within-individual variation
+- Allows:
+
+$$\text{Cov}(x_{it}, \alpha_i) \neq 0$$
+
+**Consequences**
+
+- Cannot estimate coefficients on time-invariant variables
+- More robust than OLS in panel settings
+
+---
+
+## 3. Random Effects (RE)
+
+**Equation**
+
+$$y_{it} = \beta_0 + \beta_1 x_{it} + \alpha_i + u_{it}$$
+
+- $\alpha_i$ = random individual effect
+
+**Error structure (composite error term)**
+
+$$\varepsilon_{it} = \alpha_i + u_{it}$$
+
+Individual-specific effects are captured by this composite error term. Rather than estimating a separate intercept for each unit, RE assumes that individual intercepts are drawn from a random distribution of possible intercepts — meaning $\alpha_i$ is not a fixed parameter but a random variable with some distribution.
+
+**Key assumption**
+
+$$\text{Cov}(x_{it}, \alpha_i) = 0$$
+
+**Key idea**
+
+The individual effect is treated as a random variable, not a fixed parameter.
+
+**Unique features**
+
+- Uses both:
+  - within variation (like FE)
+  - between variation (differences across individuals)
+- Estimated via GLS (Generalized Least Squares)
+- Implicitly applies partial pooling
+
+**Consequences**
+
+- Can estimate time-invariant variables
+- More efficient than FE if assumptions hold
+- Biased if $\alpha_i$ is correlated with $x_{it}$
+
+---
+
+## Side-by-Side Summary
+
+| Feature | OLS | Fixed Effects | Random Effects |
+|---|---|---|---|
+| Intercept | Single $\beta_0$ | $\alpha_i$ for each unit | $\beta_0 + \alpha_i$ |
+| Unobserved heterogeneity | Ignored | Controlled (fixed) | Modeled (random) |
+| $\text{Corr}(x_{it}, \alpha_i)$ | Not allowed | Allowed | Not allowed |
+| Variation used | All (naively) | Within only | Within + between |
+| Time-invariant variables | Yes | No | Yes |
+| Bias risk | High for panel data | Low | Depends on assumption |
