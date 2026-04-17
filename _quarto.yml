@@ -10,7 +10,7 @@ book:
   subtitle: "A Practical Introduction from Theory to Code"
   author: "Dr Clemens Jarnach"
   date: "04/16/2026"
-  repo-url: https://github.com/clemensjarnach/social_network_analysis_workshop
+  repo-url: https://github.com/clemensjarnach/longitudinal_data_analysis_workshop
   chapters:
     - index.qmd
     - 01_exercise_farm_panel_fe.qmd
